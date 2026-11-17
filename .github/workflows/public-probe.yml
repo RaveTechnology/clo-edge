@@ -1,0 +1,48 @@
+name: Manual public HTTPS probe
+'on':
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+    - name: Verify pinned public HTTPS from an independent network
+      env:
+        PROBE_JSON: ${{ secrets.CLO_EDGE_PUBLIC_PROBE }}
+      run: |-
+        python3 - <<'PY'
+        import os,json,ipaddress,socket,ssl,http.client,time,re
+        from pathlib import Path
+        try:
+            c=json.loads(os.environ.pop('PROBE_JSON'))
+            ip=ipaddress.ip_address(c['ip']);host=c['hostname']
+            if ip.version!=4 or not ip.is_global or not re.fullmatch(r'[a-zA-Z0-9.-]{1,253}',host):raise ValueError()
+            ctx=ssl.create_default_context(cadata=c['ca_pem'])
+        except Exception:
+            raise SystemExit('Invalid probe configuration; use the documented ephemeral non-credential secret')
+        results=[]
+        for i in range(5):
+            row={'at':time.time(),'ok':False}
+            try:
+                with socket.create_connection((str(ip),443),5) as raw:
+                    with ctx.wrap_socket(raw,server_hostname=host) as conn:
+                        conn.settimeout(5)
+                        conn.sendall(('GET /healthz HTTP/1.1\r\nHost: '+host+'\r\nConnection: close\r\n\r\n').encode())
+                        response=http.client.HTTPResponse(conn);response.begin();body=response.read(4097)
+                        row['ok']=response.status==200 and body==b'ok\n'
+            except Exception as e:row['error']=type(e).__name__
+            results.append(row);time.sleep(1)
+        Path('public-probe-result.json').write_text(json.dumps({'samples':results},indent=2))
+        successes=sum(r['ok'] for r in results)
+        print('Verified public HTTPS:',successes,'of',len(results),'samples')
+        if successes<3:raise SystemExit('Public HTTPS precondition failed')
+        PY
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      if: always()
+      with:
+        name: public-probe-result
+        path: public-probe-result.json
+        if-no-files-found: error
+        retention-days: 7
