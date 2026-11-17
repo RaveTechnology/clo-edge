@@ -39,18 +39,19 @@ Install the binary to `/usr/local/bin/clo-edge`, create a system account/group
 `clo-edge` and state directory `/var/lib/clo-edge` owned by that account mode0700.
 Configuration is root-owned, readable by the service user; the API token lives
 in a separate root-owned mode0600 `/etc/clo-edge/api-token`.
-Install `deploy/clo-edge.service`. Its LoadCredential copies the token privately
-for the service. Do not put secrets in command arguments, config, logs or images.
+Install `deploy/clo-edge.service` and `deploy/clo-edge-admin@.service`. Their
+LoadCredential inputs are materialized as mode0600 files in private volatile
+RuntimeDirectory paths. This accommodates systemd credential file permissions
+without weakening the program's private-file check. Secrets never enter the state
+journal/directory. Do not put secrets in arguments, config, logs or images.
 
-Commission with the daemon stopped. Run `init`, then (if automatic=true) `arm`
-as the service account with the same configuration/state and a private readable
-token file. `systemd-run --wait --collect --pipe --uid=clo-edge
---property=LoadCredential=api-token:/etc/clo-edge/api-token
-/usr/local/bin/clo-edge init --token-file %d/api-token` is suitable on a systemd
-version supporting credential specifiers; verify credential-path expansion for
-your installed systemd. Use the same command with `arm` after initialization.
-Then enable/start `clo-edge.service`. Both init and arm require CLO reads; arm
-additionally requires public and both private health checks to succeed.
+Commission with the daemon stopped: `systemctl daemon-reload`, then
+`systemctl start clo-edge-admin@init.service`, and (if automatic=true)
+`systemctl start clo-edge-admin@arm.service`. Each command completes before the
+next. Then enable/start `clo-edge.service`. Both administration commands require
+CLO reads; arm additionally requires public and both private health checks.
+Check `systemctl is-active clo-edge.service` and that inspected
+`last_observation` advances; an armed journal alone does not prove a running daemon.
 
 Default polling5s/probes2s/suspicion30s. A move requires continuous public AND
 active-private failure, healthy standby and validated CLO state. A public-only

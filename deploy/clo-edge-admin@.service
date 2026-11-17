@@ -1,0 +1,24 @@
+[Unit]
+Description=CLO edge offline administration (%i)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=clo-edge
+Group=clo-edge
+StateDirectory=clo-edge
+StateDirectoryMode=0700
+RuntimeDirectory=clo-edge-admin-%i
+RuntimeDirectoryMode=0700
+LoadCredential=api-token:/etc/clo-edge/api-token
+ExecStartPre=/usr/bin/install -m 0600 %d/api-token %t/clo-edge-admin-%i/api-token
+ExecStart=/usr/local/bin/clo-edge %i --config /etc/clo-edge/config.json --state-dir /var/lib/clo-edge --token-file %t/clo-edge-admin-%i/api-token
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=

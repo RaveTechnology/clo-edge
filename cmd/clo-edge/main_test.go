@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 	"time"
@@ -15,6 +16,25 @@ import (
 type cliCloud struct {
 	v      edge.View
 	writes int
+}
+
+func TestPrivateRuntimeCredentialCopy(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "systemd-credential")
+	dest := filepath.Join(dir, "runtime-token")
+	if e := os.WriteFile(src, []byte("unit-secret"), 0444); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := tokenFile(src); e == nil {
+		t.Fatal("accepted world-readable direct token")
+	}
+	if out, e := exec.Command("install", "-m", "0600", src, dest).CombinedOutput(); e != nil {
+		t.Fatalf("materialize credential: %s %v", out, e)
+	}
+	got, e := tokenFile(dest)
+	if e != nil || got != "unit-secret" {
+		t.Fatal("private runtime copy rejected")
+	}
 }
 
 func (f *cliCloud) Snapshot(context.Context, edge.Config) (edge.View, error) { return f.v, nil }
