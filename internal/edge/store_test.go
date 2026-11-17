@@ -4,7 +4,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestStorePersistsAndBindsHost(t *testing.T) {
@@ -37,6 +39,43 @@ func TestStorePersistsAndBindsHost(t *testing.T) {
 	defer s.Close()
 	if _, err = s.Load(); err == nil {
 		t.Fatal("journal cloned onto another host accepted")
+	}
+}
+
+func TestStoreRejectsImpossibleSuspectState(t *testing.T) {
+	s, e := OpenStore(filepath.Join(t.TempDir(), "state"), "host")
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer s.Close()
+	st := State{Version: 1, MachineID: "host", ConfigHash: "config", Phase: Watching, Armed: true, ActiveID: "a", SuspectSince: time.Unix(1000, 0)}
+	if s.Save(st) == nil {
+		t.Fatal("saved suspect window without last observation")
+	}
+}
+func TestStoreDetectsSyntacticallyValidBitrot(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "state")
+	s, e := OpenStore(dir, "host")
+	if e != nil {
+		t.Fatal(e)
+	}
+	defer s.Close()
+	st := State{Version: 1, MachineID: "host", ConfigHash: "config", Phase: Watching, ActiveID: "a"}
+	if e = s.Save(st); e != nil {
+		t.Fatal(e)
+	}
+	p := filepath.Join(dir, "state.json")
+	raw, e := os.ReadFile(p)
+	if e != nil {
+		t.Fatal(e)
+	}
+	changed := strings.Replace(string(raw), `"armed": false`, `"armed": true`, 1)
+	if changed == string(raw) {
+		t.Fatal("fixture failed to corrupt a valid JSON value")
+	}
+	os.WriteFile(p, []byte(changed), 0600)
+	if _, e = s.Load(); e == nil {
+		t.Fatal("valid JSON bitrot silently armed controller")
 	}
 }
 

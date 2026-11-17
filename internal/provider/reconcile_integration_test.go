@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -18,7 +19,7 @@ import (
 // Real HTTP, the production SDK adapter, real fsync journal, and the reconciler.
 // The fake is exclusively the cloud boundary, including asynchronous effects.
 func TestReconcilerAgainstAsyncNativeHTTP(t *testing.T) {
-	for _, lose := range []string{"none", "stop", "detach", "attach"} {
+	for _, lose := range []string{"none", "stop", "detach", "attach", "bad202-stop", "bad202-detach", "bad202-attach", "trunc202-stop", "trunc202-detach", "trunc202-attach", "ownership", "bandwidth"} {
 		t.Run(lose, func(t *testing.T) {
 			cfg := config()
 			cfg.Automatic = true
@@ -29,6 +30,7 @@ func TestReconcilerAgainstAsyncNativeHTTP(t *testing.T) {
 			addrType, addrStatus := "SERVER", "ACTIVE"
 			job := ""
 			reads := 0
+			tamper := false
 			server := func(id string) map[string]any {
 				power := "ON"
 				if statuses[id] != "ACTIVE" {
@@ -40,6 +42,12 @@ func TestReconcilerAgainstAsyncNativeHTTP(t *testing.T) {
 				a := map[string]any{"id": cfg.AddressID, "address": cfg.PublicIP, "status": addrStatus, "type": addrType, "version": 4, "external": true, "bandwidth_max_mbps": 1024}
 				if owner != "" {
 					a["attached_to"] = map[string]string{"entity": "server", "id": owner}
+				}
+				if tamper && lose == "ownership" {
+					a["attached_to"] = map[string]string{"entity": "server", "id": "cccccccc-cccc-4ccc-8ccc-cccccccccccc"}
+				}
+				if tamper && lose == "bandwidth" {
+					a["bandwidth_max_mbps"] = 100
 				}
 				return a
 			}
@@ -74,6 +82,19 @@ func TestReconcilerAgainstAsyncNativeHTTP(t *testing.T) {
 					}
 					job = kind
 					reads = 0
+					if lose == "bad202-"+kind {
+						w.WriteHeader(202)
+						fmt.Fprint(w, "{")
+						return
+					}
+					if lose == "trunc202-"+kind {
+						conn, _, err := w.(http.Hijacker).Hijack()
+						if err == nil {
+							fmt.Fprint(conn, "HTTP/1.1 202 Accepted\r\nContent-Length: 100\r\nConnection: close\r\n\r\n{")
+							conn.Close()
+						}
+						return
+					}
 					if lose == kind {
 						conn, _, err := w.(http.Hijacker).Hijack()
 						if err == nil {
@@ -141,6 +162,7 @@ func TestReconcilerAgainstAsyncNativeHTTP(t *testing.T) {
 			for i := 0; i <= 200; i += 5 {
 				now := at.Add(time.Duration(i) * time.Second)
 				mu.Lock()
+				tamper = i >= 10 && i < 20
 				public := owner == cfg.Edges[1].ID && addrStatus == "ACTIVE"
 				mu.Unlock()
 				o := observation(now, false)
@@ -161,8 +183,13 @@ func TestReconcilerAgainstAsyncNativeHTTP(t *testing.T) {
 				if st.Phase != edge.Completed || st.Armed || owner != cfg.Edges[1].ID || !reflect.DeepEqual(calls, []string{"stop", "detach", "attach"}) {
 					t.Fatalf("incomplete HTTP workflow: %+v %v", st, calls)
 				}
+			} else if lose == "ownership" || lose == "bandwidth" {
+				if st.Phase != edge.RecoveryRequired || st.Armed || len(calls) != 0 {
+					t.Fatalf("confirmed ownership violation resumed: %+v %v", st, calls)
+				}
 			} else {
-				want := map[string][]string{"stop": {"stop"}, "detach": {"stop", "detach"}, "attach": {"stop", "detach", "attach"}}[lose]
+				k := strings.TrimPrefix(strings.TrimPrefix(lose, "bad202-"), "trunc202-")
+				want := map[string][]string{"stop": {"stop"}, "detach": {"stop", "detach"}, "attach": {"stop", "detach", "attach"}}[k]
 				if st.Phase != edge.RecoveryRequired || !reflect.DeepEqual(calls, want) {
 					t.Fatalf("lost %s response replayed/advanced: %+v %v", lose, st, calls)
 				}

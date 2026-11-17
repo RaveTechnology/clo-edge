@@ -52,6 +52,9 @@ func read[T any](r *http.Response, e error) (T, error) {
 	}
 	defer r.Body.Close()
 	if r.StatusCode != 200 {
+		if r.StatusCode == 404 {
+			return out, fmt.Errorf("%w: configured resource is missing", edge.ErrUnsafeCloudState)
+		}
 		return out, fmt.Errorf("CLO read HTTP %d", r.StatusCode)
 	}
 	b, e := io.ReadAll(io.LimitReader(r.Body, (1<<20)+1))
@@ -107,7 +110,7 @@ func (c *Client) Snapshot(ctx context.Context, cfg edge.Config) (edge.View, erro
 		return v, e
 	}
 	if proj.Result == nil || proj.Result.Id != cfg.ProjectID || proj.Result.Status != "ACTIVE" {
-		return v, errors.New("project is not active or identity changed")
+		return v, fmt.Errorf("%w: project is not active or identity changed", edge.ErrUnsafeCloudState)
 	}
 	servers, e := complete[sdk.ServerSchema](ctx, func(offset int) (*http.Response, error) {
 		return c.sdk.ProjectServerList(ctx, cfg.ProjectID, sdk.WithPage(100, offset))
@@ -128,19 +131,19 @@ func (c *Client) Snapshot(ctx context.Context, cfg edge.Config) (edge.View, erro
 		}
 	}
 	if !present {
-		return v, errors.New("configured IPv4 not in project inventory")
+		return v, fmt.Errorf("%w: configured IPv4 not in project inventory", edge.ErrUnsafeCloudState)
 	}
 	membership := map[string]bool{}
 	for _, s := range servers {
 		if s.Project != cfg.ProjectID {
-			return v, errors.New("foreign server in project inventory")
+			return v, fmt.Errorf("%w: foreign server in project inventory", edge.ErrUnsafeCloudState)
 		}
 		membership[s.Id] = true
 	}
 	v.Servers = map[string]edge.Server{}
 	for _, id := range []string{cfg.ControllerServerID, cfg.Edges[0].ID, cfg.Edges[1].ID} {
 		if !membership[id] {
-			return v, errors.New("configured server not in project inventory")
+			return v, fmt.Errorf("%w: configured server not in project inventory", edge.ErrUnsafeCloudState)
 		}
 		r, e := c.sdk.ServerDetail(ctx, id)
 		s, e := read[sdk.ServerDetailSchema](r, e)
@@ -185,7 +188,10 @@ func accepted(r *http.Response, e error) error {
 		return errors.New("CLO mutation response missing")
 	}
 	defer r.Body.Close()
-	_, _ = io.Copy(io.Discard, io.LimitReader(r.Body, 4096))
+	body, readErr := io.ReadAll(io.LimitReader(r.Body, 4097))
+	if readErr != nil || len(body) > 4096 || (len(strings.TrimSpace(string(body))) != 0 && !json.Valid(body)) {
+		return errors.New("CLO mutation acknowledgement incomplete or malformed; outcome uncertain")
+	}
 	if r.StatusCode != 202 {
 		return fmt.Errorf("CLO mutation not accepted (HTTP %d); reconcile manually", r.StatusCode)
 	}

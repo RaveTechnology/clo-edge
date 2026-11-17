@@ -158,6 +158,9 @@ func (e *Engine) Tick(ctx context.Context, now time.Time, o Observation) error {
 	v, err := e.Cloud.Snapshot(ctx, e.Config)
 	now = now.Add(time.Since(start))
 	if err != nil {
+		if errors.Is(err, ErrUnsafeCloudState) {
+			return e.recover(s, "confirmed cloud resource identity or ownership violation")
+		}
 		s.SuspectSince = time.Time{}
 		s.LastObservation = time.Time{}
 		s.Reason = "cloud state unavailable; no mutation permitted"

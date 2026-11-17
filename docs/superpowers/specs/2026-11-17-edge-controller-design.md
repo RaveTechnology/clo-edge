@@ -70,7 +70,7 @@ There is no majority quorum or claim to diagnose every network partition.
 ## Durable workflow and uncertain outcomes
 
 One serialized loop, one pending command, one mutation per iteration. State is
-strictly versioned and bound to the complete validated config plus local machine
+strictly versioned, protected against accidental bitrot by a SHA256 envelope, and bound to the complete validated config plus local machine
 ID. Atomic temp-write/fsync/rename/directory-fsync; any storage failure stops the
 process before further commands. `init` is explicit and refuses existing state;
 `run` never silently initializes. A second process on this host cannot acquire

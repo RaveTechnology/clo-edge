@@ -3,6 +3,8 @@
 package edge
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -50,6 +52,17 @@ type Store struct {
 	lock         *os.File
 }
 
+type envelope struct {
+	State  State  `json:"state"`
+	SHA256 string `json:"sha256"`
+}
+
+func stateHash(st State) string {
+	b, _ := json.Marshal(st)
+	h := sha256.Sum256(b)
+	return hex.EncodeToString(h[:])
+}
+
 func OpenStore(dir, machine string) (*Store, error) {
 	if !filepath.IsAbs(dir) || machine == "" {
 		return nil, errors.New("absolute state directory and machine identity required")
@@ -93,8 +106,13 @@ func readState(dir string) (State, error) {
 	if e != nil {
 		return st, e
 	}
-	if e = strictJSON(raw, &st); e != nil {
+	var wrapped envelope
+	if e = strictJSON(raw, &wrapped); e != nil {
 		return st, e
+	}
+	st = wrapped.State
+	if wrapped.SHA256 != stateHash(st) {
+		return st, errors.New("journal integrity checksum mismatch")
 	}
 	if e = st.validate(); e != nil {
 		return st, e
@@ -128,6 +146,25 @@ func (st State) validate() error {
 			return errors.New("unknown pending command")
 		}
 	}
+	if !st.SuspectSince.IsZero() && (st.Phase != Watching || !st.Armed || st.LastObservation.IsZero() || st.LastObservation.Before(st.SuspectSince)) {
+		return errors.New("inconsistent suspect observation window")
+	}
+	if st.Phase == Watching || st.Phase == Completed {
+		if st.Pending != nil {
+			return errors.New("unexpected pending command in stable phase")
+		}
+	}
+	if st.Phase == Stopping || st.Phase == Detaching || st.Phase == Attaching || st.Phase == Verifying {
+		if !st.Armed || st.SourceID == "" || st.TargetID == "" || st.SourceID == st.TargetID || st.PhaseSince.IsZero() {
+			return errors.New("inconsistent workflow binding")
+		}
+		if st.Pending != nil {
+			want := map[Phase]string{Stopping: "stop", Detaching: "detach", Attaching: "attach"}[st.Phase]
+			if st.Pending.Kind != want || st.Pending.DispatchedAt.Before(st.PhaseSince) {
+				return errors.New("inconsistent workflow pending command")
+			}
+		}
+	}
 	return nil
 }
 func (s *Store) Save(st State) error {
@@ -137,7 +174,7 @@ func (s *Store) Save(st State) error {
 	if e := st.validate(); e != nil {
 		return e
 	}
-	raw, e := json.MarshalIndent(st, "", "  ")
+	raw, e := json.MarshalIndent(envelope{State: st, SHA256: stateHash(st)}, "", "  ")
 	if e != nil {
 		return e
 	}

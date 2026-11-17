@@ -3,6 +3,7 @@ package edge
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -17,22 +18,24 @@ type View struct {
 	Address Address
 }
 
+var ErrUnsafeCloudState = errors.New("confirmed cloud resource binding violation")
+
 func (v View) Validate(c Config) error {
 	for _, id := range []string{c.ControllerServerID, c.Edges[0].ID, c.Edges[1].ID} {
 		s, ok := v.Servers[id]
 		if !ok || s.ID != id || s.ProjectID != c.ProjectID {
-			return errors.New("configured server identity/project missing")
+			return fmt.Errorf("%w: configured server identity/project missing", ErrUnsafeCloudState)
 		}
 	}
 	a := v.Address
 	if a.ID != c.AddressID || a.IP != c.PublicIP || !a.External || a.Version != 4 || a.Bandwidth != c.BandwidthMbps {
-		return errors.New("configured IPv4 identity or bandwidth changed")
+		return fmt.Errorf("%w: configured IPv4 identity or bandwidth changed", ErrUnsafeCloudState)
 	}
 	if a.Type == "FREE" && a.Owner == "" && a.Entity == "" && a.Status == "DOWN" {
 		return nil
 	}
 	if a.Type != "SERVER" || a.Entity != "server" || (a.Owner != c.Edges[0].ID && a.Owner != c.Edges[1].ID) {
-		return errors.New("foreign or unknown address attachment")
+		return fmt.Errorf("%w: foreign or unknown address attachment", ErrUnsafeCloudState)
 	}
 	return nil
 }
