@@ -16,9 +16,18 @@ times were unchanged during hot moves; guest network reconfiguration was automat
 CLO standard L3 does not support VRRP; assignment must go through the API.
 [Provider network documentation](https://clo.ru/help/network/local).
 
-Next: full HAProxy/PROXY/ingress source-trust tests, then a controller with
-independent failure detection, single-writer decisions and ambiguous API result
-reconciliation. Total RTO includes detection, chosen fencing and IP transfer.
+The separate [four-VM data-plane experiment](docs/data-plane-2026-11-17.md)
+qualified HTTP/TLS, source-address trust on both private ingress instances,
+header/PROXY spoof handling, active WS and idle WSS, ingress health exclusion and
+an explicit powered-off-edge IP transfer. 57 connections were correlated with
+actual edge TCP peers. The measured API move took 37.828 seconds to first HTTPS;
+power-off command to first HTTPS was 76.764 seconds. These are samples, not an SLA.
+[Sanitized measurements](docs/data-plane-2026-11-17.json).
+
+Next: design and implement the controller with independent failure detection,
+single-writer decisions and ambiguous API result reconciliation. Total RTO
+includes detection, chosen fencing and IP transfer. Wait for terminal
+STOPPED/OFF when a shutdown is required: OFF can appear during STOPPING.
 No controller image is published before that code exists.
 
 [Cleaned measurements](docs/ip-transfer-2026-11-17.json). Apache-2.0.

@@ -14,6 +14,8 @@ jobs:
       with:
         persist-credentials: false
     - run: |-
-        python3 -m json.tool docs/ip-transfer-2026-11-17.json > /dev/null
+        for evidence in docs/*.json; do
+          python3 -m json.tool "$evidence" > /dev/null
+        done
         test -s README.md
         test -s LICENSE

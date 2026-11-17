@@ -1,0 +1,227 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-17",
+  "type": "disposable-data-plane-spike",
+  "versions": {
+    "kubernetes": "v1.36.6+k3s1",
+    "traefik": "v3.7.19",
+    "traefikImage": "docker.io/library/traefik:v3.7.19@sha256:44b61e76a251fe586d17d881fc900452d0a7b4a4b08c97ce6eac86d45b4c8b9d",
+    "fixtureImage": "docker.io/library/python:3.12-alpine@sha256:a61cbd76a882645de7f91423329fe43a67eed60d7da24f9e5331414bb3618b20",
+    "haproxy-a": "2.8.30-0ubuntu0.24.04.2",
+    "haproxy-b": "2.8.30-0ubuntu0.24.04.2"
+  },
+  "topology": {
+    "edgeVMs": 2,
+    "privateKubernetesVMs": 2,
+    "kubernetesIngressInstances": 2,
+    "movableIPv4": 1,
+    "separateControlIPv4": 1,
+    "reusedNAT": true
+  },
+  "sourceIP": {
+    "verifiedConnections": 57,
+    "bothIngressNodesUsed": true,
+    "forgedHeadersAccepted": false,
+    "sourceMatchesActualEdgePeer": true,
+    "warmupReadinessRequestsNotCorrelated": 1
+  },
+  "controlledPublicSource": {
+    "publicSocketSourceBoundToAssignedAddress": true,
+    "appReceivedExactPublicSource": true
+  },
+  "publicProxyAttempts": {
+    "v1": {
+      "spoofedAddressAccepted": false,
+      "http200": false,
+      "frontendReceiptProven": false
+    },
+    "v2": {
+      "spoofedAddressAccepted": false,
+      "http200": false,
+      "frontendReceiptProven": false
+    }
+  },
+  "sameFrontendFromPrivateClient": {
+    "v1": {
+      "spoofedAddressAccepted": false,
+      "http200": false
+    },
+    "v2": {
+      "spoofedAddressAccepted": false,
+      "http200": false
+    }
+  },
+  "untrustedPrivateProxy": {
+    "v1": {
+      "spoofedAddressAccepted": false,
+      "http200": true
+    },
+    "v2": {
+      "spoofedAddressAccepted": false,
+      "http200": true
+    }
+  },
+  "privateIngressPortsBlocked": {
+    "8000": true,
+    "8443": true,
+    "9000": true
+  },
+  "forwardedHeaderAliasesDeleted": true,
+  "webSocketForwardedSchemes": [
+    "ws",
+    "wss"
+  ],
+  "terminalStopStates": [
+    {
+      "seconds": 1.455686092376709,
+      "status": "STOPPING",
+      "switchStatus": "OFF"
+    },
+    {
+      "seconds": 3.7015225887298584,
+      "status": "STOPPING",
+      "switchStatus": "OFF"
+    },
+    {
+      "seconds": 5.404069185256958,
+      "status": "STOPPING",
+      "switchStatus": "OFF"
+    },
+    {
+      "seconds": 6.7706685066223145,
+      "status": "STOPPING",
+      "switchStatus": "OFF"
+    },
+    {
+      "seconds": 8.05654764175415,
+      "status": "STOPPING",
+      "switchStatus": "OFF"
+    },
+    {
+      "seconds": 9.82355284690857,
+      "status": "STOPPING",
+      "switchStatus": "OFF"
+    },
+    {
+      "seconds": 11.17373538017273,
+      "status": "STOPPING",
+      "switchStatus": "OFF"
+    },
+    {
+      "seconds": 12.99463939666748,
+      "status": "STOPPING",
+      "switchStatus": "OFF"
+    },
+    {
+      "seconds": 14.466030597686768,
+      "status": "STOPPING",
+      "switchStatus": "OFF"
+    },
+    {
+      "seconds": 16.038283348083496,
+      "status": "STOPPING",
+      "switchStatus": "OFF"
+    },
+    {
+      "seconds": 17.718657970428467,
+      "status": "STOPPING",
+      "switchStatus": "OFF"
+    },
+    {
+      "seconds": 20.090590476989746,
+      "status": "STOPPING",
+      "switchStatus": "OFF"
+    },
+    {
+      "seconds": 21.480529069900513,
+      "status": "STOPPING",
+      "switchStatus": "OFF"
+    },
+    {
+      "seconds": 24.338238954544067,
+      "status": "STOPPING",
+      "switchStatus": "OFF"
+    },
+    {
+      "seconds": 26.364101886749268,
+      "status": "STOPPING",
+      "switchStatus": "OFF"
+    },
+    {
+      "seconds": 28.34930157661438,
+      "status": "STOPPING",
+      "switchStatus": "OFF"
+    },
+    {
+      "seconds": 30.31557321548462,
+      "status": "STOPPING",
+      "switchStatus": "OFF"
+    },
+    {
+      "seconds": 32.17714715003967,
+      "status": "STOPPED",
+      "switchStatus": "OFF"
+    }
+  ],
+  "longConnections": [
+    {
+      "protocol": "WS",
+      "mode": "active",
+      "seconds": 187.998,
+      "finalEchoPassed": true
+    },
+    {
+      "protocol": "WSS",
+      "mode": "idle",
+      "seconds": 181.774,
+      "finalEchoPassed": true
+    }
+  ],
+  "ingressBlackhole": {
+    "seconds": 86.333,
+    "samples": 53,
+    "failedRequests": 9,
+    "maxLatencySeconds": 1.503,
+    "failedIngressDownVerified": true,
+    "healthyIngressUpVerified": true,
+    "recoveredIngressUpVerified": true
+  },
+  "edgePoweredOff": {
+    "oldWebSocketUsableAfterPowerOff": false,
+    "oldWebSocketFailure": "ConnectionClosedError",
+    "webSocketReconnect": true,
+    "stopToFirstHTTPSSeconds": 76.764,
+    "offToFirstHTTPSSeconds": 44.394,
+    "moveToFirstHTTPSSeconds": 37.828,
+    "successGapSeconds": 74.511,
+    "failedRequests": 59,
+    "samples": 82,
+    "explicitSourceOff": true,
+    "terminalStatusStopped": true,
+    "oldSessionPhysicallyOnA": true,
+    "automaticController": false
+  },
+  "standbyEdgeBootAndServiceUnchanged": true,
+  "transportErrorsByProbeKind": {
+    "baseline": 3,
+    "ingress-blackhole": 9,
+    "edge-off-transfer": 8,
+    "websocket-open": 3,
+    "edge-off-transfer-final": 59
+  },
+  "cleanup": {
+    "ownedVMsAbsent": 4,
+    "ownedBootVolumesAbsent": 4,
+    "baselineRestored": true,
+    "retainedIPv4Free": 2,
+    "baselineNATRetained": true
+  },
+  "limits": [
+    "No automatic failover controller",
+    "No HA/SLA or throughput qualification",
+    "Existing WebSocket session does not migrate; client reconnect required",
+    "External malformed PROXY attempt receipt at frontend is not independently proven; same frontend additionally tested from an untrusted private VM",
+    "Fault observer errors include its network path; functional probes retry transport errors, not unsafe responses",
+    "No CSI or production data migration acceptance"
+  ]
+}
