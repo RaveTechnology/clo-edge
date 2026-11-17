@@ -170,7 +170,7 @@ func (e *Engine) Tick(ctx context.Context, now time.Time, o Observation) error {
 		return e.recover(s, "controller VM is not active")
 	}
 	if s.Phase == Watching || s.Phase == Completed {
-		if !v.Address.On(s.ActiveID) {
+		if !v.Address.OwnedBy(s.ActiveID) {
 			return e.recover(s, "IPv4 ownership changed outside controller")
 		}
 		if s.Pending != nil {

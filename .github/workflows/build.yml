@@ -1,4 +1,4 @@
-name: Research evidence checks
+name: Controller and evidence checks
 'on':
   push:
     branches:
@@ -13,9 +13,10 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
         persist-credentials: false
-    - run: |-
-        for evidence in docs/*.json; do
-          python3 -m json.tool "$evidence" > /dev/null
-        done
-        test -s README.md
-        test -s LICENSE
+    - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5
+      with:
+        go-version: 1.27.1
+        cache: true
+    - run: make check haproxy-check package
+    - run: make image
+    - run: docker run --rm --network none local/clo-edge:$(cat VERSION) version

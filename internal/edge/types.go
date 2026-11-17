@@ -45,6 +45,11 @@ func (a Address) On(id string) bool {
 	return a.Status == "ACTIVE" && a.Type == "SERVER" && a.Entity == "server" && a.Owner == id
 }
 
+// Powering off a VM changes address liveness without changing its ownership.
+func (a Address) OwnedBy(id string) bool {
+	return (a.Status == "ACTIVE" || a.Status == "DOWN") && a.Type == "SERVER" && a.Entity == "server" && a.Owner == id
+}
+
 type Provider interface {
 	Snapshot(context.Context, Config) (View, error)
 	Stop(context.Context, string) error

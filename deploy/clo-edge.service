@@ -1,0 +1,31 @@
+[Unit]
+Description=CLO edge failover controller (single fixed host)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=clo-edge
+Group=clo-edge
+StateDirectory=clo-edge
+StateDirectoryMode=0700
+LoadCredential=api-token:/etc/clo-edge/api-token
+ExecStart=/usr/local/bin/clo-edge run --config /etc/clo-edge/config.json --state-dir /var/lib/clo-edge --token-file %d/api-token
+Restart=on-failure
+RestartSec=10
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+LockPersonality=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

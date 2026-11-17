@@ -1,6 +1,17 @@
 # CLO Edge
 
-**Design and lab evidence; failover controller is not implemented yet.**
+**Experimental single-host failover controller; production acceptance pending.**
+
+The Go controller watches two dedicated HAProxy VMs, confirms terminal
+STOPPED/OFF on the source, and moves one explicitly configured IPv4 through CLO
+API. It uses a durable local command journal and a lifetime kernel lock. Lost
+native responses require operator recovery; commands are never blindly replayed.
+Observe-only is the default. Explicit arming is required; a completed move
+disarms the controller. No automatic failback or controller-host HA is provided.
+
+[Installation, health policy and recovery](docs/controller-operations.md).
+Build: `make check build`; `make haproxy-check` validates the generated config.
+Binary commands: init, arm, run, inspect, render-haproxy, version.
 
 Proposed HTTP/HTTPS/WSS entry: two standalone HAProxy VMs in the CLO project,
 one movable public IPv4, PROXYv2 to two private Kubernetes ingress instances.
@@ -24,10 +35,9 @@ actual edge TCP peers. The measured API move took 37.828 seconds to first HTTPS;
 power-off command to first HTTPS was 76.764 seconds. These are samples, not an SLA.
 [Sanitized measurements](docs/data-plane-2026-11-17.json).
 
-Next: design and implement the controller with independent failure detection,
-single-writer decisions and ambiguous API result reconciliation. Total RTO
-includes detection, chosen fencing and IP transfer. Wait for terminal
-STOPPED/OFF when a shutdown is required: OFF can appear during STOPPING.
-No controller image is published before that code exists.
+The controller implementation follows these observations. Total RTO includes
+detection, fencing and IP transfer. OFF during STOPPING is not terminal.
+The earlier experiment did not test automatic failover; local controller
+acceptance and any subsequent native acceptance must be reported separately.
 
 [Cleaned measurements](docs/ip-transfer-2026-11-17.json). Apache-2.0.

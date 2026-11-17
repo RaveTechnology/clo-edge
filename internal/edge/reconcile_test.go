@@ -369,3 +369,22 @@ func TestRecoveredActiveBeforeStopCancelsFence(t *testing.T) {
 		t.Fatal("fenced recovered active")
 	}
 }
+
+func TestPoweredOffSourceCanFailOver(t *testing.T) {
+	e, f, start := fixture(t)
+	src := e.Config.Edges[0].ID
+	s := f.view.Servers[src]
+	s.Status = "STOPPED"
+	s.SwitchStatus = "OFF"
+	f.view.Servers[src] = s
+	f.view.Address.Status = "DOWN"
+	at := toStopping(t, e, start)
+	for i := 0; i < 7; i++ {
+		n := at.Add(time.Duration(i*5) * time.Second)
+		tick(t, e, n, obs(e.Config, n, i >= 4, false, true))
+	}
+	st, _ := e.Store.Load()
+	if st.Phase != Completed || !f.view.Address.On(e.Config.Edges[1].ID) || len(f.calls) != 2 {
+		t.Fatalf("powered-off edge not recovered: %+v %v", st, f.calls)
+	}
+}

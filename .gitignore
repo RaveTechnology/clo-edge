@@ -3,3 +3,11 @@
 /dist/
 *.test
 coverage.out
+/_site/
+/pages-output/
+/.venv/
+__pycache__/
+*.pyc
+.env
+*.pem
+*.key
