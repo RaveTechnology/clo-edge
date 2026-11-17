@@ -1,6 +1,6 @@
 # CLO edge controller implementation plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** A conservative, runnable single-host edge failover controller with durable
 no-repeat recovery, explicit arming and deployable packages.
@@ -42,11 +42,11 @@ HAProxy 2.8, Docker, GitHub Actions.
 OpenStore(dir,machineID), Store.Load/Save/Close; State records phase, arming,
 bindings, timestamps and optional Pending{kind,accepted,dispatchedAt}.
 
-- [ ] RED: invalid topology/unknown config, missing/corrupt/rebound journal,
+- [x] RED: invalid topology/unknown config, missing/corrupt/rebound journal,
   concurrent lock, atomic persistence and second-process lock tests.
-- [ ] Run `GOWORK=off go test ./internal/edge`, expect missing implementation FAIL.
-- [ ] Implement config validation, versioned state, lifetime flock, atomic fsync writes.
-- [ ] Run tests PASS, `git diff --check`; commit scoped files.
+- [x] Run `GOWORK=off go test ./internal/edge`, expect missing implementation FAIL.
+- [x] Implement config validation, versioned state, lifetime flock, atomic fsync writes.
+- [x] Run tests PASS, `git diff --check`; commit scoped files.
 
 ### Task 2: provider and health adapters
 
@@ -56,11 +56,11 @@ bindings, timestamps and optional Pending{kind,accepted,dispatchedAt}.
 view; Stop/Detach/Attach return accepted-only-on-202. Probe returns one complete
 timestamped Observation with public/active/standby readiness.
 
-- [ ] RED: complete inventory, alien entity/owner, bandwidth preservation,
+- [x] RED: complete inventory, alien entity/owner, bandwidth preservation,
   stop/detach/attach bodies, one POST on 500/connection loss, redaction/redirect;
   private identity, TLS hostname/CA, pinned VIP and no redirect tests.
-- [ ] Run scoped tests FAIL, implement adapters with SDK retry disabled.
-- [ ] Run full `GOWORK=off go test ./...` PASS and commit.
+- [x] Run scoped tests FAIL, implement adapters with SDK retry disabled.
+- [x] Run full `GOWORK=off go test ./...` PASS and commit.
 
 ### Task 3: serialized failover reconciler
 
@@ -69,12 +69,12 @@ timestamped Observation with public/active/standby readiness.
 calls Provider, enforcing durable pending commands. Arm checks current ownership
 and healthy topology. All operations happen in the same exclusive store session.
 
-- [ ] RED: healthy/single-path/shared/standby failures; consecutive30s gate;
+- [x] RED: healthy/single-path/shared/standby failures; consecutive30s gate;
   STOPPING/OFF cannot detach; stop→detach→attach→verify only exact IDs; completion
   disarms; crash before/after native acknowledgement; missing write barrier;
   uncertain completion never advances; deadline and restart preserve locks.
-- [ ] Run scoped tests FAIL; implement smallest state machine satisfying spec.
-- [ ] Run race/full suite PASS and commit.
+- [x] Run scoped tests FAIL; implement smallest state machine satisfying spec.
+- [x] Run race/full suite PASS and commit.
 
 ### Task 4: runnable commands, HAProxy and deployment
 
@@ -83,10 +83,10 @@ and healthy topology. All operations happen in the same exclusive store session.
 **Interfaces:** init/arm/run/inspect/render-haproxy/version CLI; file-only tokens,
 signal cancellation, loopback status; HAProxy private health identity and pools.
 
-- [ ] RED: init refuses existing state, run refuses missing state, arming default
+- [x] RED: init refuses existing state, run refuses missing state, arming default
   observe-only, cancellation, rendered topology behavior and CLI integration.
-- [ ] Run tests FAIL, implement commands and render, service/container examples.
-- [ ] Build and run binary; validate HAProxy config in real parser/container;
+- [x] Run tests FAIL, implement commands and render, service/container examples.
+- [x] Build and run binary; validate HAProxy config in real parser/container;
   race/vet and image non-root smoke PASS; commit.
 
 ### Task 5: final acceptance and release preparation
@@ -94,12 +94,12 @@ signal cancellation, loopback status; HAProxy private health identity and pools.
 **Files:** `docs/controller-acceptance-2026-11-17.md`, release/build workflows and
 operator recovery documentation as needed; private knowledge handoff.
 
-- [ ] Exercise real CLI+HTTP fake-cloud/probes with exact native call ledger,
+- [x] Exercise real CLI+HTTP fake-cloud/probes with exact native call ledger,
   including restart and ambiguous mutation; test production failure modes.
-- [ ] Run full suite, race/vet, build/container/parser/privacy checks.
-- [ ] Commit; request one fresh whole-branch review with spec/plan/ledger.
-- [ ] Resolve Important/Critical findings with RED→GREEN and full suite.
-- [ ] If native lab is practical, use new scoped ownership journal and verify
+- [x] Run full suite, race/vet, build/container/parser/privacy checks.
+- [x] Commit; request one fresh whole-branch review with spec/plan/ledger.
+- [x] Resolve Important/Critical findings with RED→GREEN and full suite.
+- [x] If native lab is practical, use new scoped ownership journal and verify
   cleanup independently. Report live acceptance separately from local acceptance.
 - [ ] Integrate/publish within existing authorization only after all gates pass;
   read back exact remote SHA/CI/artifacts and record production limitations.

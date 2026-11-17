@@ -5,7 +5,7 @@ qualify local software boundaries; production acceptance remains open.
 
 ## Local checks
 
-The current suite passes 62 test cases including subcases, with race detection
+The current suite passes 64 test cases including subcases, with race detection
 and vet. One independent whole-branch review found three Important issues. Each
 was reproduced and fixed: malformed/truncated202 acknowledgement, confirmed
 native ownership violations mistaken for transport errors, and impossible suspect
@@ -42,6 +42,11 @@ prove provider consistency guarantees, VM fencing physics, network partitions,
 cloud-job timing, automatic RTO or prolonged operation. The separate
 [data-plane experiment](data-plane-2026-11-17.md) remains the native network proof.
 No new native controller acceptance is claimed by these local checks.
+
+The subsequent [native controller lab](controller-native-2026-11-17.md) passed
+automatic fencing/move/verification and cleanup. It also corrected the real
+FIXED address-kind contract and systemd credential materialization. Those
+native results are qualified separately from the local HTTP boundary tests.
 
 An initial native preparation attempt did not reach controller commissioning:
 the workstation HTTPS precondition failed. Its four VMs and boot volumes were

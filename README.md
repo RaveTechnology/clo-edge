@@ -13,6 +13,11 @@ disarms the controller. No automatic failback or controller-host HA is provided.
 Build: `make check build`; `make haproxy-check` validates the generated config.
 Binary commands: init, arm, run, inspect, render-haproxy, version.
 
+[Native automatic failover acceptance](docs/controller-native-2026-11-17.md):
+source STOPPED/OFF, reserve retained boot/service identity, independent public
+HTTPS 5/5 before and after. First observed response completed 129.472 s after fault
+injection; controller recorded completion 136.248 s. One sample, not an SLA.
+
 Proposed HTTP/HTTPS/WSS entry: two standalone HAProxy VMs in the CLO project,
 one movable public IPv4, PROXYv2 to two private Kubernetes ingress instances.
 Certificates and HTTP routing remain in the ingress. SIP/RTP stays separate.

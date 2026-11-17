@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-17",
+  "status": "native-controller-sample-passed",
+  "sourceCommit": "faa107449c91e5226f7c50739051f3dbacb2101b",
+  "binarySHA256": "3707827040f6408b938278ca9b87dec7c917a2680b6ef0e488bcd9eb003744ed",
+  "topology": {
+    "vms": 4,
+    "perVM": {
+      "sharedVCPU": 1,
+      "ramGB": 2,
+      "bootGB": 10
+    },
+    "edges": 2,
+    "independentController": 1,
+    "syntheticIngressInstances": 2,
+    "fixtureOnControllerIsLabOnly": true,
+    "kubernetesInThisTest": false,
+    "nativeAPIVersion": "v2",
+    "controllerVersion": "0.1.0-rc.1",
+    "goVersion": "1.27.1",
+    "cloSDKVersion": "3.2.0"
+  },
+  "policy": {
+    "suspectSeconds": 30,
+    "pollSeconds": 5,
+    "controllerProbeSeconds": 2,
+    "convergenceSeconds": 180,
+    "cooldownSeconds": 600,
+    "singleFixedHost": true,
+    "nativeSourceFence": "STOPPED AND OFF",
+    "nativeAttachedAddressType": "FIXED",
+    "successDisarms": true,
+    "automaticFailback": false
+  },
+  "results": {
+    "sharedIngressNoMove": true,
+    "nativeSourceStoppedOff": true,
+    "targetOwnsVIP": true,
+    "publicTLSVerified": true,
+    "standbyNotRestarted": true,
+    "realDaemonRestartNoFailback": true,
+    "independentPublicHTTPSBeforeAndAfter": true
+  },
+  "runtime": {
+    "user": "clo-edge",
+    "tokenMaterializedInPrivateRuntimeDirectory": true,
+    "tokenMode": "0600",
+    "realPIDAndFreshObservationRequiredBeforeTesting": true,
+    "adminInitAndArmTemplateExecuted": true
+  },
+  "timings": {
+    "faultToFirstSuccessfulWorkstationRequestStartSeconds": 128.467,
+    "faultToFirstSuccessfulWorkstationResponseCompleteSeconds": 129.472,
+    "faultToControllerRecordedVerificationSeconds": 136.248,
+    "firstObservedPhases": [
+      {
+        "phase": "Watching",
+        "firstObservedAfterFaultSeconds": 4.341
+      },
+      {
+        "phase": "Stopping",
+        "firstObservedAfterFaultSeconds": 34.828
+      },
+      {
+        "phase": "Detaching",
+        "firstObservedAfterFaultSeconds": 79.834
+      },
+      {
+        "phase": "Attaching",
+        "firstObservedAfterFaultSeconds": 91.983
+      },
+      {
+        "phase": "Completed",
+        "firstObservedAfterFaultSeconds": 137.688
+      }
+    ],
+    "observedTerminalFenceChecks": 7
+  },
+  "observers": {
+    "workstation": {
+      "samples": 14,
+      "successes": 2,
+      "failures": 12,
+      "perIOStepTimeoutSeconds": 5,
+      "httpFraming": "Content-Length via HTTPResponse, not TCP EOF",
+      "sampleRetries": 0
+    },
+    "independentGitHub": [
+      {
+        "stage": "before-failover",
+        "samples": 5,
+        "successes": 5,
+        "runURL": "https://github.com/RaveTechnology/clo-edge/actions/runs/44161529169"
+      },
+      {
+        "stage": "after-failover",
+        "samples": 5,
+        "successes": 5,
+        "runURL": "https://github.com/RaveTechnology/clo-edge/actions/runs/44162394545"
+      }
+    ]
+  },
+  "cleanup": {
+    "allOwnedVMs404": true,
+    "allOwnedBootVolumes404": true,
+    "exactBaselineRestored": true,
+    "retainedIPv4Free": 2,
+    "counts": {
+      "servers": 0,
+      "volumes": 0,
+      "vrouters": 1,
+      "loadbalancers": 0,
+      "keypairs": 0,
+      "addresses": 3
+    },
+    "ephemeralPublicProbeSecretRemoved": true
+  },
+  "earlierAttempts": {
+    "count": 3,
+    "maxConcurrentVMsAcrossAllAttempts": 4,
+    "allEarlierVMsAndBootsDeletedBeforeNextAttempt": true,
+    "noneCountedAsSuccessfulControllerAcceptance": true,
+    "notes": [
+      "Two preparations failed at the workstation raw HTTPS observer; local generated HAProxy/PROXYv2/TLS succeeded and later a framed HTTP observer was used. Exact network attribution is not claimed.",
+      "One attempt exposed a systemd credential-file permission incompatibility. The daemon never ran; its armed registry is not treated as automation evidence. Corrected runtime materialization was verified in the final run."
+    ]
+  },
+  "limitations": [
+    "One native sample, not an SLA or production qualification.",
+    "Synthetic ingress fixtures, not production RKE2/Kubernetes packaging; prior data-plane experiment is separate.",
+    "HTTP/TLS only in this controller lab; old TCP/WebSocket connections are not migrated.",
+    "Native API lost-response injection remains locally qualified, not performed on live native cloud jobs.",
+    "No controller-host HA, automatic failback, infrastructure provisioning, throughput qualification or SIP/RTP test.",
+    "Continuous public health monitoring requires an external blackbox probe; controller metrics expose phase/armed only.",
+    "The separate CSI native-volume expansion NO-GO is unchanged."
+  ]
+}

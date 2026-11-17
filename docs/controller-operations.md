@@ -38,9 +38,9 @@ Install them on the respective edges; preserve independent SSH/firewall access.
 Install the binary to `/usr/local/bin/clo-edge`, create a system account/group
 `clo-edge` and state directory `/var/lib/clo-edge` owned by that account mode0700.
 Configuration is root-owned, readable by the service user; the API token lives
-in a separate root-owned mode0600 `/etc/clo-edge/api-token`.
+in a separate root-owned mode 0600 `/etc/clo-edge/api-token`.
 Install `deploy/clo-edge.service` and `deploy/clo-edge-admin@.service`. Their
-LoadCredential inputs are materialized as mode0600 files in private volatile
+LoadCredential inputs are materialized as mode 0600 files in private volatile
 RuntimeDirectory paths. This accommodates systemd credential file permissions
 without weakening the program's private-file check. Secrets never enter the state
 journal/directory. Do not put secrets in arguments, config, logs or images.
