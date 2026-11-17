@@ -1,0 +1,134 @@
+{
+  "test": "CLO retained IPv4 transfer between two disposable VMs",
+  "date": "2026-11-17",
+  "topology": {
+    "newVMs": 2,
+    "vcpusPerVM": 1,
+    "ramGiBPerVM": 2,
+    "bootGiBPerVM": 10,
+    "newIPs": 0,
+    "newNATs": 0,
+    "fixture": "HTTP/80 on each VM; no HAProxy/Kubernetes/PROXY setup"
+  },
+  "openapiSha256": "6cdea731791364aa6c6ddafe749d650f207574670504faa6f6a0641ce785a2dd",
+  "phase": "cleaned",
+  "localFixturePass": true,
+  "moves": [
+    {
+      "source": "a",
+      "target": "b",
+      "mode": "hot",
+      "sourceSwitch": "ON",
+      "targetSwitch": "ON",
+      "ok": true,
+      "error": null,
+      "commandToFirstTargetSeconds": 42.014,
+      "detachResponseSeconds": 1.515,
+      "attachResponseSeconds": 11.469,
+      "observedSuccessGapSeconds": 40.844,
+      "failedProbes": 53,
+      "totalProbes": 67
+    },
+    {
+      "source": "b",
+      "target": "a",
+      "mode": "hot",
+      "sourceSwitch": "ON",
+      "targetSwitch": "ON",
+      "ok": true,
+      "error": null,
+      "commandToFirstTargetSeconds": 45.554,
+      "detachResponseSeconds": 4.335,
+      "attachResponseSeconds": 17.56,
+      "observedSuccessGapSeconds": 40.988,
+      "failedProbes": 48,
+      "totalProbes": 67
+    },
+    {
+      "source": "a",
+      "target": "b",
+      "mode": "source-powered-off",
+      "sourceSwitch": "OFF",
+      "targetSwitch": "ON",
+      "ok": true,
+      "error": null,
+      "commandToFirstTargetSeconds": 50.618,
+      "detachResponseSeconds": 6.793,
+      "attachResponseSeconds": 12.232,
+      "observedSuccessGapSeconds": 52.035,
+      "failedProbes": 67,
+      "totalProbes": 88,
+      "powerOffCommandToFirstTargetSeconds": 55.895,
+      "sourceRemainedOff": true
+    }
+  ],
+  "bootUnchanged": {
+    "after-hot-a-b": {
+      "a": true,
+      "b": true
+    },
+    "after-hot-b-a": {
+      "a": true,
+      "b": true
+    },
+    "after-source-off": {
+      "b": true
+    }
+  },
+  "serviceUnchanged": {
+    "after-hot-a-b": {
+      "a": true,
+      "b": true
+    },
+    "after-hot-b-a": {
+      "a": true,
+      "b": true
+    },
+    "after-source-off": {
+      "b": true
+    }
+  },
+  "vipGuestPresence": {
+    "before": {
+      "a": true,
+      "b": false
+    },
+    "after-hot-a-b": {
+      "a": false,
+      "b": true
+    },
+    "after-hot-b-a": {
+      "a": true,
+      "b": false
+    },
+    "after-source-off": {
+      "b": true
+    }
+  },
+  "directClientSourcePreserved": null,
+  "sourceAddressObservation": {
+    "baselineDistinctPeers": 3,
+    "testDistinctPeers": 3,
+    "allObservedPeersInBaselineSet": true,
+    "qualification": "Direct connections already showed multiple public peer addresses before the first move; external observer source identity was not independently pinned"
+  },
+  "httpProbeIntervalSeconds": 0.25,
+  "httpProbeTimeoutSeconds": 0.8,
+  "cleanupComplete": true,
+  "failure": null,
+  "cleanupFailure": null,
+  "finalInventory": {
+    "servers": 0,
+    "volumes": 0,
+    "vrouters": 1,
+    "loadbalancers": 0,
+    "keypairs": 0,
+    "addresses": 3
+  },
+  "limits": [
+    "One run and two VMs; no SLA or automatic HA claim",
+    "No hypervisor failure, network partition, provider API outage, or sustained traffic tests",
+    "Fresh TCP connections; existing sessions are not migrated",
+    "Time is from observer; HTTP sampling and API polling add measurement uncertainty"
+  ]
+}
