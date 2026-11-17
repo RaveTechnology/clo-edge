@@ -27,7 +27,7 @@ func TestReconcilerAgainstAsyncNativeHTTP(t *testing.T) {
 			var calls []string
 			statuses := map[string]string{cfg.ControllerServerID: "ACTIVE", cfg.Edges[0].ID: "ACTIVE", cfg.Edges[1].ID: "ACTIVE"}
 			owner := cfg.Edges[0].ID
-			addrType, addrStatus := "SERVER", "ACTIVE"
+			addrType, addrStatus := "FIXED", "ACTIVE"
 			job := ""
 			reads := 0
 			tamper := false
@@ -120,7 +120,7 @@ func TestReconcilerAgainstAsyncNativeHTTP(t *testing.T) {
 							addrStatus = "DOWN"
 						case "attach":
 							owner = cfg.Edges[1].ID
-							addrType = "SERVER"
+							addrType = "FIXED"
 							addrStatus = "ACTIVE"
 						}
 						job = ""

@@ -255,7 +255,7 @@ func (e *Engine) Tick(ctx context.Context, now time.Time, o Observation) error {
 			return e.recover(s, "standby health unavailable before IPv4 mutation")
 		}
 		if s.Phase == Detaching {
-			if v.Address.Owner != s.SourceID || v.Address.Type != "SERVER" || v.Address.Entity != "server" {
+			if v.Address.Owner != s.SourceID || v.Address.Type != "FIXED" || v.Address.Entity != "server" {
 				return e.recover(s, "source IPv4 ownership changed before detach")
 			}
 			return e.dispatch(ctx, s, "detach", now)

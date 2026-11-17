@@ -47,7 +47,7 @@ func (f *fakeCloud) Attach(_ context.Context, id, target string, bw int) error {
 	f.calls = append(f.calls, "attach:"+id+":"+target)
 	if !f.delay {
 		f.view.Address.Status = "ACTIVE"
-		f.view.Address.Type = "SERVER"
+		f.view.Address.Type = "FIXED"
 		f.view.Address.Owner = target
 		f.view.Address.Entity = "server"
 		f.view.Address.Bandwidth = bw
@@ -69,7 +69,7 @@ func fixture(t *testing.T) (*Engine, *fakeCloud, time.Time) {
 		t.Fatal(e)
 	}
 	t.Cleanup(func() { s.Close() })
-	f := &fakeCloud{view: View{Servers: map[string]Server{}, Address: Address{ID: c.AddressID, IP: c.PublicIP, Status: "ACTIVE", Type: "SERVER", Entity: "server", Owner: c.Edges[0].ID, External: true, Version: 4, Bandwidth: 100}}}
+	f := &fakeCloud{view: View{Servers: map[string]Server{}, Address: Address{ID: c.AddressID, IP: c.PublicIP, Status: "ACTIVE", Type: "FIXED", Entity: "server", Owner: c.Edges[0].ID, External: true, Version: 4, Bandwidth: 100}}}
 	for _, id := range []string{c.ControllerServerID, c.Edges[0].ID, c.Edges[1].ID} {
 		f.view.Servers[id] = Server{ID: id, ProjectID: c.ProjectID, Status: "ACTIVE", SwitchStatus: "ON"}
 	}

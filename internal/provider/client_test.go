@@ -73,7 +73,7 @@ func TestSnapshotRejectsIncompleteOrForeignAddress(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			cfg := config()
-			addr := map[string]any{"id": cfg.AddressID, "address": cfg.PublicIP, "status": "ACTIVE", "type": "SERVER", "external": true, "version": 4, "bandwidth_max_mbps": 1024, "attached_to": map[string]string{"entity": tc.entity, "id": tc.owner}}
+			addr := map[string]any{"id": cfg.AddressID, "address": cfg.PublicIP, "status": "ACTIVE", "type": "FIXED", "external": true, "version": 4, "bandwidth_max_mbps": 1024, "attached_to": map[string]string{"entity": tc.entity, "id": tc.owner}}
 			server := func(id string) map[string]any {
 				return map[string]any{"id": id, "project": cfg.ProjectID, "status": "ACTIVE", "switch_status": "ON"}
 			}

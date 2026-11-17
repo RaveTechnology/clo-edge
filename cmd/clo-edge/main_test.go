@@ -37,7 +37,7 @@ func cliFixture(t *testing.T) ([]string, *cliCloud) {
 	tp := filepath.Join(dir, "token")
 	os.WriteFile(cp, raw, 0600)
 	os.WriteFile(tp, []byte("unit-secret"), 0600)
-	f := &cliCloud{v: edge.View{Servers: map[string]edge.Server{}, Address: edge.Address{ID: c.AddressID, IP: c.PublicIP, Status: "ACTIVE", Type: "SERVER", Entity: "server", Owner: c.Edges[0].ID, External: true, Version: 4, Bandwidth: 100}}}
+	f := &cliCloud{v: edge.View{Servers: map[string]edge.Server{}, Address: edge.Address{ID: c.AddressID, IP: c.PublicIP, Status: "ACTIVE", Type: "FIXED", Entity: "server", Owner: c.Edges[0].ID, External: true, Version: 4, Bandwidth: 100}}}
 	for _, id := range []string{c.ControllerServerID, c.Edges[0].ID, c.Edges[1].ID} {
 		f.v.Servers[id] = edge.Server{ID: id, ProjectID: c.ProjectID, Status: "ACTIVE", SwitchStatus: "ON"}
 	}

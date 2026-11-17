@@ -34,7 +34,7 @@ func (v View) Validate(c Config) error {
 	if a.Type == "FREE" && a.Owner == "" && a.Entity == "" && a.Status == "DOWN" {
 		return nil
 	}
-	if a.Type != "SERVER" || a.Entity != "server" || (a.Owner != c.Edges[0].ID && a.Owner != c.Edges[1].ID) {
+	if a.Type != "FIXED" || a.Entity != "server" || (a.Owner != c.Edges[0].ID && a.Owner != c.Edges[1].ID) {
 		return fmt.Errorf("%w: foreign or unknown address attachment", ErrUnsafeCloudState)
 	}
 	return nil
@@ -45,12 +45,12 @@ func (a Address) Free() bool {
 	return a.Status == "DOWN" && a.Type == "FREE" && a.Owner == "" && a.Entity == ""
 }
 func (a Address) On(id string) bool {
-	return a.Status == "ACTIVE" && a.Type == "SERVER" && a.Entity == "server" && a.Owner == id
+	return a.Status == "ACTIVE" && a.Type == "FIXED" && a.Entity == "server" && a.Owner == id
 }
 
 // Powering off a VM changes address liveness without changing its ownership.
 func (a Address) OwnedBy(id string) bool {
-	return (a.Status == "ACTIVE" || a.Status == "DOWN") && a.Type == "SERVER" && a.Entity == "server" && a.Owner == id
+	return (a.Status == "ACTIVE" || a.Status == "DOWN") && a.Type == "FIXED" && a.Entity == "server" && a.Owner == id
 }
 
 type Provider interface {
