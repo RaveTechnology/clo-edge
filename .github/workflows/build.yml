@@ -73,5 +73,7 @@ jobs:
         if not re.fullmatch(r'sha256:[a-f0-9]{64}',digest):raise SystemExit('Invalid OCI digest')
         Path('dist/image-reference.txt').write_text('ghcr.io/ravetechnology/clo-edge@'+digest+'\n')
         PY
-        (cd dist && sha256sum image-reference.txt >> SHA256SUMS)
-        gh release create "$GITHUB_REF_NAME" --verify-tag --prerelease --latest=false --title "$GITHUB_REF_NAME — experimental" --notes-file RELEASE_NOTES.md dist/clo-edge-linux-amd64.tar.gz dist/SHA256SUMS dist/image-reference.txt dist/LICENSE dist/NOTICE dist/THIRD_PARTY_NOTICES.txt
+        docker pull "$IMAGE:$VERSION"
+        docker save "$IMAGE:$VERSION" | gzip -n > dist/clo-edge-linux-amd64-image.tar.gz
+        (cd dist && sha256sum image-reference.txt clo-edge-linux-amd64-image.tar.gz >> SHA256SUMS)
+        gh release create "$GITHUB_REF_NAME" --verify-tag --prerelease --latest=false --title "$GITHUB_REF_NAME — experimental" --notes-file RELEASE_NOTES.md dist/clo-edge-linux-amd64.tar.gz dist/clo-edge-linux-amd64-image.tar.gz dist/SHA256SUMS dist/image-reference.txt dist/LICENSE dist/NOTICE dist/THIRD_PARTY_NOTICES.txt

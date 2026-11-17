@@ -92,3 +92,18 @@ Do not deploy replicas, rolling updates, automatic relocation or ephemeral state
 Default image entrypoint is `/clo-edge`; pass the command and paths explicitly.
 The scratch image contains no shell. The native systemd binary is the preferred
 first deployment; verify resource scope in a disposable project before production.
+
+Releases also include `clo-edge-linux-amd64-image.tar.gz` for registry-independent
+installation. Download it and SHA256SUMS, verify the checksum, then `docker load -i`
+the archive. Loading the archive does not commission or start a controller.
+
+## Optional independent lab probe
+
+`Manual public HTTPS probe` is an opt-in GitHub Actions workflow for the synthetic
+lab fixture. Its ephemeral Actions secret `CLO_EDGE_PUBLIC_PROBE` is JSON with
+`ip` (global IPv4), `hostname` and `ca_pem` (the public lab CA certificate). It must
+never contain an API token or private key. The workflow pins the address, validates
+TLS and samples `/healthz` five times, expecting the fixture body `ok` plus newline.
+Its artifact contains only timestamps/results/error classes, without host/IP/CA.
+Remove the temporary secret after the job. This manual preflight does not replace
+continuous external blackbox monitoring of a deployed service.

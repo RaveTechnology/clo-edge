@@ -9,3 +9,7 @@ provisioning or SIP/RTP support. Existing TCP/WebSocket sessions must reconnect.
 Native network data-plane results do not qualify automatic failover RTO or SLA.
 Review the acceptance report and operations guide before using this prerelease.
 No production deployment is performed by publishing this release.
+
+The image is also included as a public Docker image archive. Verify SHA256SUMS,
+then use `docker load -i clo-edge-linux-amd64-image.tar.gz`; registry login is not
+required to download or load that Release asset.
