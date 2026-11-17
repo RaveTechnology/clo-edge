@@ -93,7 +93,7 @@ native jobs and reconcile ownership before commissioning a fresh installation.
 
 For source already STOPPED/OFF, record that observation without sending stop.
 Detach only when source owns the configured address; attach only when its native
-state is FREE with no attachment. Attach keeps exact bandwidth and entity=server.
+type is FREE, status is DOWN, with no attachment. Attach keeps exact bandwidth and entity=server.
 After attach confirm ACTIVE/exact target; verify public TLS/HTTP AND target-private
 health, then mark completed. Verification failure pauses, without moving back.
 No other actor may manage this IP while automatic operation is armed.
