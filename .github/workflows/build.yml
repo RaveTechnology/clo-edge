@@ -62,6 +62,7 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |-
+        set -euo pipefail
         VERSION="${GITHUB_REF_NAME#v}"
         IMAGE="ghcr.io/ravetechnology/clo-edge"
         echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
