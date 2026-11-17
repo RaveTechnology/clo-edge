@@ -3,6 +3,8 @@ name: Controller and evidence checks
   push:
     branches:
     - main
+    tags:
+    - v*
   pull_request: {}
 permissions:
   contents: read
@@ -17,6 +19,59 @@ jobs:
       with:
         go-version: 1.27.1
         cache: true
+    - name: Check immutable release version
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: test "$GITHUB_REF_NAME" = "v$(cat VERSION)"
     - run: make check haproxy-check package
     - run: make image
     - run: docker run --rm --network none local/clo-edge:$(cat VERSION) version
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      if: startsWith(github.ref, 'refs/tags/v')
+      with:
+        name: release-files
+        path: dist/*
+        if-no-files-found: error
+        retention-days: 7
+  release:
+    needs: check
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      packages: write
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        persist-credentials: false
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+      with:
+        name: release-files
+        path: dist
+    - name: Refuse an existing release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |-
+        python3 - <<'PY'
+        import os,subprocess
+        path='repos/'+os.environ['GITHUB_REPOSITORY']+'/releases/tags/'+os.environ['GITHUB_REF_NAME']
+        r=subprocess.run(['gh','api',path],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        if r.returncode==0: raise SystemExit('Existing release; refusing to replace its image or assets')
+        if b'(HTTP 404)' not in r.stderr: raise SystemExit('Cannot establish that this is a new release')
+        PY
+    - name: Publish experimental image and binary
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |-
+        VERSION="${GITHUB_REF_NAME#v}"
+        IMAGE="ghcr.io/ravetechnology/clo-edge"
+        echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+        docker buildx build --platform=linux/amd64 --provenance=false --build-arg VERSION="$VERSION" --metadata-file dist/image-metadata.json --tag "$IMAGE:$VERSION" --push .
+        python3 - <<'PY'
+        import json,re
+        from pathlib import Path
+        digest=json.loads(Path('dist/image-metadata.json').read_text())['containerimage.digest']
+        if not re.fullmatch(r'sha256:[a-f0-9]{64}',digest):raise SystemExit('Invalid OCI digest')
+        Path('dist/image-reference.txt').write_text('ghcr.io/ravetechnology/clo-edge@'+digest+'\n')
+        PY
+        (cd dist && sha256sum image-reference.txt >> SHA256SUMS)
+        gh release create "$GITHUB_REF_NAME" --verify-tag --prerelease --latest=false --title "$GITHUB_REF_NAME — experimental" --notes-file RELEASE_NOTES.md dist/clo-edge-linux-amd64.tar.gz dist/SHA256SUMS dist/image-reference.txt dist/LICENSE dist/NOTICE dist/THIRD_PARTY_NOTICES.txt
