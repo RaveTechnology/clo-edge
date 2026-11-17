@@ -5,6 +5,14 @@ qualify local software boundaries; production acceptance remains open.
 
 ## Local checks
 
+The current suite passes 62 test cases including subcases, with race detection
+and vet. One independent whole-branch review found three Important issues. Each
+was reproduced and fixed: malformed/truncated202 acknowledgement, confirmed
+native ownership violations mistaken for transport errors, and impossible suspect
+window fields. The journal also uses a SHA256 envelope to detect accidental
+valid-JSON bitrot. No distributed fencing or protection against a hostile host
+administrator is implied.
+
 - Real Linux kernel lock excludes a competing process. A new host identity,
   corrupted state, unknown fields and a changed configuration are rejected.
 - Real atomic/fsync journal survives close/reopen. A failed durable write prevents
@@ -34,6 +42,12 @@ prove provider consistency guarantees, VM fencing physics, network partitions,
 cloud-job timing, automatic RTO or prolonged operation. The separate
 [data-plane experiment](data-plane-2026-11-17.md) remains the native network proof.
 No new native controller acceptance is claimed by these local checks.
+
+An initial native preparation attempt did not reach controller commissioning:
+the workstation HTTPS precondition failed. Its four VMs and boot volumes were
+deleted and baseline independently verified. The exact same probe and generated
+HAProxy configuration subsequently passed a local two-backend PROXYv2/TLS test.
+This failed preparation is not counted as a successful native controller test.
 
 ## Remaining deployment boundaries
 
