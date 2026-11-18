@@ -1,0 +1,5 @@
+- targets:
+  - https://rancher.example.invalid/ping
+  labels:
+    module: rancher_ping
+    site: management

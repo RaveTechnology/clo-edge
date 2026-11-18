@@ -1,0 +1,25 @@
+[
+  {
+    "image": "quay.io/prometheus/blackbox-exporter:v0.29.1",
+    "digest": "quay.io/prometheus/blackbox-exporter@sha256:ea1c7aa3ef3f307cd03e85f34abb604478ccb90b567fc690da0cd9776da76b13",
+    "binaries": {
+      "blackbox_exporter": "2914daff3ff21d13a75286b8805747e29b5a18f66071070cb59be3bbc28b9391"
+    }
+  },
+  {
+    "image": "quay.io/prometheus/prometheus:v3.16.0",
+    "digest": "quay.io/prometheus/prometheus@sha256:9332054523223e2ddc18d8101799d54a4a8d823b030c53216f063a6c117773cd",
+    "binaries": {
+      "prometheus": "fe1fc9a01dbe3c6bd8abda3f050fc9fc85483cbea2b36c8603eef34cbbd36ff9",
+      "promtool": "a3c953f444da51b0f1198a11e136715a522bbe003c288b7c27e5007be3780267"
+    }
+  },
+  {
+    "image": "quay.io/prometheus/alertmanager:v0.35.0",
+    "digest": "quay.io/prometheus/alertmanager@sha256:5f6e66c01bd610aef6dd671642a52eee775fd3a89bd8788ebada33efaf373d10",
+    "binaries": {
+      "alertmanager": "eb9414f91c8b1614801c97afde80a5c3436bd0d802ab4e2bc2822d2d32aa3fda",
+      "amtool": "3059a83d0a4d840177cf61b918f5cfa5f5949993406914956fcc0ad39212810e"
+    }
+  }
+]

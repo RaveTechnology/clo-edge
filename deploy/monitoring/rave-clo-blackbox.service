@@ -1,0 +1,30 @@
+[Unit]
+Description=Rave CLO blackbox (external monitor)
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=rave-clo-monitor
+Group=rave-clo-monitor
+WorkingDirectory=/etc/rave-clo-monitor
+ExecStart=/opt/rave-clo-monitor/bin/blackbox_exporter --config.file=/etc/rave-clo-monitor/blackbox.yml --web.listen-address=127.0.0.1:19115
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+MemoryMax=64M
+CPUQuota=20%
+
+[Install]
+WantedBy=multi-user.target

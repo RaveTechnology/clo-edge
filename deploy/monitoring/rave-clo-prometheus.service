@@ -1,0 +1,32 @@
+[Unit]
+Description=Rave CLO prometheus (external monitor)
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=rave-clo-monitor
+Group=rave-clo-monitor
+WorkingDirectory=/etc/rave-clo-monitor
+ExecStart=/opt/rave-clo-monitor/bin/prometheus --config.file=/etc/rave-clo-monitor/prometheus.yml --web.listen-address=127.0.0.1:19090 --storage.tsdb.path=/var/lib/rave-clo-prometheus --storage.tsdb.retention.time=7d --storage.tsdb.retention.size=512MB
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+MemoryMax=384M
+CPUQuota=30%
+StateDirectory=rave-clo-prometheus
+StateDirectoryMode=0700
+
+[Install]
+WantedBy=multi-user.target

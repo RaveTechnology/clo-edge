@@ -1,0 +1,39 @@
+global:
+  scrape_interval: 15s
+  scrape_timeout: 8s
+  evaluation_interval: 15s
+  external_labels:
+    environment: clo
+    monitor: rave-clo
+rule_files:
+- /etc/rave-clo-monitor/alerts.yml
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      - 127.0.0.1:19093
+scrape_configs:
+- job_name: clo-public-https
+  metrics_path: /probe
+  file_sd_configs:
+  - files:
+    - /etc/rave-clo-monitor/targets.example.yml
+    refresh_interval: 30s
+  relabel_configs:
+  - source_labels:
+    - module
+    target_label: __param_module
+  - source_labels:
+    - __address__
+    target_label: __param_target
+  - source_labels:
+    - __param_target
+    target_label: instance
+  - target_label: __address__
+    replacement: 127.0.0.1:19115
+  - action: labeldrop
+    regex: module
+- job_name: clo-alertmanager
+  static_configs:
+  - targets:
+    - 127.0.0.1:19093

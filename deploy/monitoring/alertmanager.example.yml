@@ -1,0 +1,50 @@
+global:
+  resolve_timeout: 5m
+route:
+  receiver: discard
+  group_by:
+  - alertname
+  - instance
+  group_wait: 10s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+  - matchers:
+    - acceptance_run=~".+"
+    receiver: discard
+  - matchers:
+    - environment="clo"
+    - monitor="rave-clo"
+    - alertname="CLOMonitoringDeliveryTest"
+    receiver: telegram-test
+    group_wait: 0s
+    group_interval: 1h
+    repeat_interval: 1h
+  - matchers:
+    - environment="clo"
+    - monitor="rave-clo"
+    receiver: telegram-clo
+receivers:
+- name: discard
+- name: telegram-clo
+  telegram_configs:
+  - bot_token_file: /run/credentials/rave-clo-alertmanager.service/telegram-bot
+    chat_id_file: /run/credentials/rave-clo-alertmanager.service/telegram-chat
+    parse_mode: ''
+    message: "[CLO] {{ .Status | toUpper }} \u2014 {{ .CommonLabels.alertname }}\n\
+      {{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Labels.instance }}\n{{ end\
+      \ }}"
+    send_resolved: true
+- name: telegram-test
+  telegram_configs:
+  - bot_token_file: /run/credentials/rave-clo-alertmanager.service/telegram-bot
+    chat_id_file: /run/credentials/rave-clo-alertmanager.service/telegram-chat
+    parse_mode: ''
+    message: "[CLO] \u041F\u0440\u043E\u0432\u0435\u0440\u043A\u0430 \u0434\u043E\u0441\
+      \u0442\u0430\u0432\u043A\u0438 \u043C\u043E\u043D\u0438\u0442\u043E\u0440\u0438\
+      \u043D\u0433\u0430. \u0412\u043D\u0435\u0448\u043D\u0438\u0435 HTTPS-\u043F\u0440\
+      \u043E\u0432\u0435\u0440\u043A\u0438 \u043D\u0430\u0441\u0442\u0440\u043E\u0435\
+      \u043D\u044B; \u044D\u0442\u043E \u043E\u0434\u043D\u043E \u0442\u0435\u0441\
+      \u0442\u043E\u0432\u043E\u0435 \u0443\u0432\u0435\u0434\u043E\u043C\u043B\u0435\
+      \u043D\u0438\u0435."
+    send_resolved: false

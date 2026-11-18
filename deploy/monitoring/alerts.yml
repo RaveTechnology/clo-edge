@@ -1,0 +1,42 @@
+groups:
+- name: clo-external-public
+  interval: 15s
+  rules:
+  - alert: CLOPublicHTTPSDown
+    expr: probe_success{job="clo-public-https"} == 0
+    for: 1m
+    labels:
+      environment: clo
+      monitor: rave-clo
+      severity: critical
+    annotations:
+      summary: CLO public HTTPS is unavailable
+  - alert: CLOPublicTLSExpiring
+    expr: probe_ssl_earliest_cert_expiry{job="clo-public-https"} - time() < 14 * 86400
+      and probe_ssl_earliest_cert_expiry{job="clo-public-https"} - time() >= 3 * 86400
+    for: 10m
+    labels:
+      environment: clo
+      monitor: rave-clo
+      severity: warning
+    annotations:
+      summary: CLO public TLS certificate expires soon
+  - alert: CLOPublicTLSExpiring
+    expr: probe_ssl_earliest_cert_expiry{job="clo-public-https"} > 0 and probe_ssl_earliest_cert_expiry{job="clo-public-https"}
+      - time() < 3 * 86400
+    for: 1m
+    labels:
+      environment: clo
+      monitor: rave-clo
+      severity: critical
+    annotations:
+      summary: CLO public TLS certificate expires soon
+  - alert: CLOPublicProbeUnavailable
+    expr: (up{job="clo-public-https"} == 0) or absent(up{job="clo-public-https"})
+    for: 1m
+    labels:
+      environment: clo
+      monitor: rave-clo
+      severity: critical
+    annotations:
+      summary: CLO public probes are unavailable

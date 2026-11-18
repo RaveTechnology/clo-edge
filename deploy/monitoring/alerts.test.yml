@@ -1,0 +1,119 @@
+rule_files:
+- alerts.yml
+evaluation_interval: 15s
+tests:
+- name: outage_requires_one_minute_and_clears_after_recovery
+  interval: 15s
+  input_series:
+  - series: probe_success{job="clo-public-https",instance="https://rancher.example.invalid/ping"}
+    values: 0x4 1x8
+  alert_rule_test:
+  - eval_time: 45s
+    alertname: CLOPublicHTTPSDown
+    exp_alerts: []
+  - eval_time: 1m
+    alertname: CLOPublicHTTPSDown
+    exp_alerts:
+    - exp_labels:
+        job: clo-public-https
+        instance: https://rancher.example.invalid/ping
+        severity: critical
+        environment: clo
+        monitor: rave-clo
+      exp_annotations:
+        summary: CLO public HTTPS is unavailable
+  - eval_time: 75s
+    alertname: CLOPublicHTTPSDown
+    exp_alerts: []
+- name: brief_transport_failure_does_not_notify
+  interval: 15s
+  input_series:
+  - series: probe_success{job="clo-public-https",instance="https://rancher.example.invalid/ping"}
+    values: 1 0 0 1x8
+  alert_rule_test:
+  - eval_time: 1m
+    alertname: CLOPublicHTTPSDown
+    exp_alerts: []
+  - eval_time: 2m
+    alertname: CLOPublicHTTPSDown
+    exp_alerts: []
+- name: certificate_warning_is_held_ten_minutes
+  interval: 15s
+  input_series:
+  - series: probe_ssl_earliest_cert_expiry{job="clo-public-https",instance="https://rancher.example.invalid/ping"}
+    values: 604800+0x50
+  alert_rule_test:
+  - eval_time: 9m45s
+    alertname: CLOPublicTLSExpiring
+    exp_alerts: []
+  - eval_time: 10m
+    alertname: CLOPublicTLSExpiring
+    exp_alerts:
+    - exp_labels:
+        job: clo-public-https
+        instance: https://rancher.example.invalid/ping
+        severity: warning
+        environment: clo
+        monitor: rave-clo
+      exp_annotations:
+        summary: CLO public TLS certificate expires soon
+- name: certificate_critical_before_three_days
+  interval: 15s
+  input_series:
+  - series: probe_ssl_earliest_cert_expiry{job="clo-public-https",instance="https://rancher.example.invalid/ping"}
+    values: 172800+0x10
+  alert_rule_test:
+  - eval_time: 1m
+    alertname: CLOPublicTLSExpiring
+    exp_alerts:
+    - exp_labels:
+        job: clo-public-https
+        instance: https://rancher.example.invalid/ping
+        severity: critical
+        environment: clo
+        monitor: rave-clo
+      exp_annotations:
+        summary: CLO public TLS certificate expires soon
+- name: healthy_certificate_does_not_notify
+  interval: 15s
+  input_series:
+  - series: probe_ssl_earliest_cert_expiry{job="clo-public-https",instance="https://rancher.example.invalid/ping"}
+    values: 2592000+0x50
+  alert_rule_test:
+  - eval_time: 10m
+    alertname: CLOPublicTLSExpiring
+    exp_alerts: []
+- name: missing_probe_target_is_not_silent
+  interval: 15s
+  input_series: []
+  alert_rule_test:
+  - eval_time: 1m
+    alertname: CLOPublicProbeUnavailable
+    exp_alerts:
+    - exp_labels:
+        job: clo-public-https
+        severity: critical
+        environment: clo
+        monitor: rave-clo
+      exp_annotations:
+        summary: CLO public probes are unavailable
+- name: unreachable_exporter_is_not_silent
+  interval: 15s
+  input_series:
+  - series: up{job="clo-public-https",instance="https://rancher.example.invalid/ping"}
+    values: '0x8'
+  alert_rule_test:
+  - eval_time: 45s
+    alertname: CLOPublicProbeUnavailable
+    exp_alerts: []
+  - eval_time: 1m
+    alertname: CLOPublicProbeUnavailable
+    exp_alerts:
+    - exp_labels:
+        job: clo-public-https
+        instance: https://rancher.example.invalid/ping
+        severity: critical
+        environment: clo
+        monitor: rave-clo
+      exp_annotations:
+        summary: CLO public probes are unavailable

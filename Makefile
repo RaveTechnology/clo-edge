@@ -21,3 +21,11 @@ package: build
 	cd dist && sha256sum clo-edge-linux-amd64.tar.gz LICENSE NOTICE THIRD_PARTY_NOTICES.txt > SHA256SUMS
 image:
 	docker buildx build --platform=linux/amd64 --provenance=false --build-arg VERSION=$(VERSION) -t local/clo-edge:$(VERSION) --load .
+
+.PHONY: monitoring-check
+monitoring-check:
+	docker run --rm --network none -v "$(CURDIR)/deploy/monitoring:/etc/rave-clo-monitor:ro" -w /etc/rave-clo-monitor --entrypoint /bin/promtool quay.io/prometheus/prometheus@sha256:9332054523223e2ddc18d8101799d54a4a8d823b030c53216f063a6c117773cd check config prometheus.example.yml
+	docker run --rm --network none -v "$(CURDIR)/deploy/monitoring:/etc/rave-clo-monitor:ro" -w /etc/rave-clo-monitor --entrypoint /bin/promtool quay.io/prometheus/prometheus@sha256:9332054523223e2ddc18d8101799d54a4a8d823b030c53216f063a6c117773cd test rules alerts.test.yml
+	docker run --rm --network none -v "$(CURDIR)/deploy/monitoring:/etc/rave-clo-monitor:ro" -w /etc/rave-clo-monitor --entrypoint /bin/amtool quay.io/prometheus/alertmanager@sha256:5f6e66c01bd610aef6dd671642a52eee775fd3a89bd8788ebada33efaf373d10 check-config alertmanager.example.yml
+	docker run --rm --network none -v "$(CURDIR)/deploy/monitoring:/etc/rave-clo-monitor:ro" -w /etc/rave-clo-monitor --entrypoint /bin/amtool quay.io/prometheus/alertmanager@sha256:5f6e66c01bd610aef6dd671642a52eee775fd3a89bd8788ebada33efaf373d10 config routes test --config.file=alertmanager.example.yml --verify.receivers=discard environment=clo monitor=rave-clo acceptance_run=fixture
+	docker run --rm --network none -v "$(CURDIR)/deploy/monitoring:/etc/rave-clo-monitor:ro" -w /etc/rave-clo-monitor --entrypoint /bin/blackbox_exporter quay.io/prometheus/blackbox-exporter@sha256:ea1c7aa3ef3f307cd03e85f34abb604478ccb90b567fc690da0cd9776da76b13 --config.file=blackbox.yml --config.check

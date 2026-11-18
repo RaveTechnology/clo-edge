@@ -1,0 +1,34 @@
+[Unit]
+Description=Rave CLO alertmanager (external monitor)
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=rave-clo-monitor
+Group=rave-clo-monitor
+WorkingDirectory=/etc/rave-clo-monitor
+ExecStart=/opt/rave-clo-monitor/bin/alertmanager --config.file=/etc/rave-clo-monitor/alertmanager.yml --web.listen-address=127.0.0.1:19093 --cluster.listen-address= --storage.path=/var/lib/rave-clo-alertmanager
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+MemoryMax=128M
+CPUQuota=20%
+StateDirectory=rave-clo-alertmanager
+StateDirectoryMode=0700
+LoadCredential=telegram-bot:/etc/rave-clo-monitor/telegram.bot
+LoadCredential=telegram-chat:/etc/rave-clo-monitor/telegram.chat
+
+[Install]
+WantedBy=multi-user.target

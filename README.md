@@ -25,6 +25,11 @@ HTTPS response completed 126.939 s after the edge fault.
 The node observer had an interruption and request failures; production acceptance
 and permanent external alerting remain pending.
 
+[External public monitoring](docs/external-monitoring.md) includes pinned native
+Prometheus/blackbox/Alertmanager examples, scoped Telegram delivery, private
+credentials and semantic alert tests. Private controller metrics require a separate
+reachable transport; a public probe does not prove controller readiness.
+
 Proposed HTTP/HTTPS/WSS entry: two standalone HAProxy VMs in the CLO project,
 one movable public IPv4, PROXYv2 to two private Kubernetes ingress instances.
 Certificates and HTTP routing remain in the ingress. SIP/RTP stays separate.
