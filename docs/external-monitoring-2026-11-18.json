@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-18",
+  "status": "public-rancher-monitor-commissioned",
+  "scope": "One permanent Rancher public HTTPS /ping endpoint; production edge/controller targets not installed",
+  "host": {
+    "outsideCLO": true,
+    "existingManagementHost": true,
+    "newVMs": 0,
+    "existingK3sPIDAndHostBootUnchanged": true
+  },
+  "versions": {
+    "prometheus": "3.16.0",
+    "blackbox": "0.29.1",
+    "alertmanager": "0.35.0"
+  },
+  "services": {
+    "enabledOnBoot": 3,
+    "activeAsDedicatedUnprivilegedUser": 3,
+    "loopbackOnlyPorts": [
+      19115,
+      19090,
+      19093
+    ],
+    "alertmanagerClusterListenerDisabled": true,
+    "realProcessRestartAndFreshPostRestartProbePassed": true,
+    "hostRebootPerformed": false
+  },
+  "publicProbe": {
+    "success": true,
+    "TLSAndHostnameVerified": true,
+    "bodyVerified": true,
+    "IPv4Only": true,
+    "redirectsFollowed": false,
+    "intervalSeconds": 15,
+    "failureHoldSeconds": 60
+  },
+  "credentials": {
+    "CLOKeyNeeded": false,
+    "sourceRootOwnedMode": "0600",
+    "systemdLoadCredential": true,
+    "effectiveAccess": {
+      "designatedServiceUser": true,
+      "unrelatedUser": false
+    },
+    "credentialValuesAndActualChatNotPublished": true,
+    "privateOffhostConfigBackupSaved": true
+  },
+  "localAcceptance": {
+    "passed": true,
+    "fixtureWasTLSVerified": true,
+    "actualTargetLeftHealthy": true,
+    "firingAndResolvedReceivedOnlyOnLoopback": true,
+    "secondsFromFixtureFailureToFiringObservation": 90.008,
+    "secondsFromFiringObservationToResolvedObservation": 30.006,
+    "fixtureServiceAndConfigRemoved": true,
+    "permanentAcceptanceLabelDiscardGuard": true
+  },
+  "telegramDelivery": {
+    "ownerAuthorizedExistingGroupAndOneTest": true,
+    "logicalAlertSubmissions": 1,
+    "completedNotificationAttemptsDelta": 1,
+    "failedNotificationsDelta": 0,
+    "testResolvedNotificationDisabled": true,
+    "humanReadReceiptClaimed": false,
+    "manualResubmissionPerformed": false
+  },
+  "validation": {
+    "semanticRuleScenarios": 7,
+    "emptyRulesNegativeControlFailedAsExpected": true,
+    "unreachableExporterNegativeControlFailedAsExpected": true,
+    "acceptanceRouteNegativeControlFailedAsExpected": true,
+    "pinnedConfigChecksPassed": true,
+    "raceVetPassed": true
+  },
+  "limits": [
+    "One public endpoint monitor; /ping does not prove full Rancher, Kubernetes, workload or data health.",
+    "Permanent production edge and private controller phase/armed metrics are not configured because those resources do not yet exist.",
+    "One external observer host; no observer-host HA or independent deadman.",
+    "Systemd enablement and real service restarts verified; host was not rebooted.",
+    "Alertmanager delivery is not exactly-once; a single completed Telegram attempt with zero failures was observed.",
+    "Separate CSI fresh native volume resize still returns ERROR; production migration gate remains closed."
+  ]
+}

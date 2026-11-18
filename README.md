@@ -30,6 +30,11 @@ Prometheus/blackbox/Alertmanager examples, scoped Telegram delivery, private
 credentials and semantic alert tests. Private controller metrics require a separate
 reachable transport; a public probe does not prove controller readiness.
 
+[Commissioning sample, 18 November](docs/external-monitoring-2026-11-18.md):
+permanent Rancher public probe, controlled local firing/resolution, one authorized
+Telegram test and real service-restart acceptance. Production edge/controller
+metrics and observer-host HA remain separate work.
+
 Proposed HTTP/HTTPS/WSS entry: two standalone HAProxy VMs in the CLO project,
 one movable public IPv4, PROXYv2 to two private Kubernetes ingress instances.
 Certificates and HTTP routing remain in the ingress. SIP/RTP stays separate.
