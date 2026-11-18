@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-18",
+  "status": "synthetic-network-sample-passed",
+  "productionAccepted": false,
+  "topology": {
+    "temporaryCLOVMs": 2,
+    "temporaryExternalPeerVMs": 1,
+    "ownedNATs": 1,
+    "newCLOPublicIPv4Allocations": 0,
+    "reusedCLOPublicIPv4": 1,
+    "perCLOVM": {
+      "sharedVCPU": 2,
+      "ramGB": 4,
+      "bootGB": 20
+    },
+    "rancher": "2.15.3",
+    "nodeDriver": "0.1.0",
+    "uiExtension": "0.1.6",
+    "rke2": "v1.36.5+rke2r1",
+    "cni": "bundled Canal",
+    "kamailio": "6.1.3",
+    "rtpengine": "9.4.0.0",
+    "freeswitch": "1.10.12",
+    "sipp": "3.8.0",
+    "publicWorkerBootstrappedPrivatelyBeforeGuardAndAttach": true,
+    "nodeIdentityAndCNITransport": "private VPC",
+    "internalSIPAndRTPBind": "worker-local overlay interface",
+    "freeswitchNetworking": "ordinary pod on the other node",
+    "permanentRancherPreserved": {
+      "sharedVCPU": 2,
+      "ramGB": 8
+    }
+  },
+  "sourceImageManifestSHA256": {
+    "kamailio": "a48619019277e115c852d3e271fb063490d458ac24cbeb1864527f790709276c",
+    "rtpengine": "d5bf3715baa197d89f89a70207d06d5509a4284b7392310a94a466ace07afb96",
+    "freeswitch": "a77ca5bb913734d8ee6267dbaaed9a265e1e3df722d3bb666a9311c0a7d35d3b"
+  },
+  "results": {
+    "calls": [
+      {
+        "name": "smoke-udp",
+        "transport": "udp",
+        "requestedSeconds": 5.0,
+        "sentPackets": 250,
+        "receivedPackets": 248,
+        "exactEchoFrames": 248,
+        "observedMediaSeconds": 4.938572057000101
+      },
+      {
+        "name": "long-udp",
+        "transport": "udp",
+        "requestedSeconds": 45.0,
+        "sentPackets": 2250,
+        "receivedPackets": 2248,
+        "exactEchoFrames": 2248,
+        "observedMediaSeconds": 44.93725286100016
+      },
+      {
+        "name": "tcp",
+        "transport": "tcp",
+        "requestedSeconds": 10.0,
+        "sentPackets": 500,
+        "receivedPackets": 498,
+        "exactEchoFrames": 498,
+        "observedMediaSeconds": 9.938899984999807
+      },
+      {
+        "name": "tls",
+        "transport": "tls",
+        "requestedSeconds": 45.0,
+        "sentPackets": 2250,
+        "receivedPackets": 2248,
+        "exactEchoFrames": 2248,
+        "observedMediaSeconds": 44.93768458199975
+      },
+      {
+        "name": "wss",
+        "transport": "wss",
+        "requestedSeconds": 10.0,
+        "sentPackets": 500,
+        "receivedPackets": 497,
+        "exactEchoFrames": 497,
+        "observedMediaSeconds": 9.938899864000177
+      }
+    ],
+    "tlsPeerCertificateAndIPSANVerified": true,
+    "exactEchoSequenceUniquenessChecked": true,
+    "independentSIPpSignallingPassed": true,
+    "relayQuery": {
+      "associatedTransport": "wss",
+      "associatedToExactSession": true,
+      "rtpPackets": 996,
+      "rtpErrors": 0,
+      "rtcpPackets": 2,
+      "samplingDoesNotEstablishWholeCallPacketLoss": true
+    },
+    "reverse": {
+      "receivedPackets": 300,
+      "echoedPackets": 300,
+      "knownTonePackets": 300,
+      "observedMediaSeconds": 5.978959090999979,
+      "medianPacketGapSeconds": 0.01999523999984376,
+      "ackAndByeCompleted": true,
+      "recordingChannels": 2,
+      "recordingSampleRate": 8000,
+      "maximumToneCorrelation": 0.9999627156215855
+    },
+    "negativeChecks": {
+      "peerAdminPortsClosed": [
+        22,
+        6443,
+        10250
+      ],
+      "untrustedSourceTCPPortsClosed": [
+        443,
+        5060,
+        5061,
+        22,
+        6443,
+        10250
+      ],
+      "untrustedCARejected": true,
+      "unknownDestinationRejectedWith404": true
+    },
+    "kamailioRestart": {
+      "stage": "after-internal-leg-fix-before-FS-profile-finalization",
+      "newVerifiedWSSPassed": true,
+      "requestedSeconds": 5,
+      "sentPackets": 250,
+      "receivedPackets": 248,
+      "exactEchoFrames": 248,
+      "activeCallSurvivalTested": false
+    }
+  },
+  "findings": {
+    "hostVPCTrafficToRemotePodMasqueradedByFlannel": true,
+    "sourcePortRandomizationObserved": true,
+    "overlayBindPreservedSourcePort": true,
+    "clusterNATRulesModified": false,
+    "initialMinimalFSFixtureOmittedExplicitRTPTimer": true,
+    "fixedWAVSourceSeconds": 6,
+    "initialUnpacedWAVFirstToLastSeconds": [
+      4.7798358649999955,
+      5.223970217999977
+    ],
+    "kernelTimerfdOverrideAloneFixedPacing": false,
+    "finalProfileRTPTimer": "soft",
+    "diagnosticKernelTimerOverrideRemoved": true,
+    "operatorSourceAlreadySelectedSoftTimer": true,
+    "providerClockFaultEstablished": false
+  },
+  "cleanup": {
+    "complete": true,
+    "temporaryCLOVMs404": 2,
+    "temporaryCLOBootVolumes404": 2,
+    "ownedNAT404": true,
+    "ownedRancherClusterAndMachineConfigGone": true,
+    "externalPeerAndPrimaryIPv4Gone": true,
+    "externalOwnedFirewallAndSSHKeyGone": true,
+    "baselineResourcesPreserved": true,
+    "reusedCLOPublicIPv4RetainedFree": true,
+    "independentReadback": true,
+    "ownedRemoteManagementFilesRemoved": true
+  },
+  "limits": [
+    "One bounded synthetic network compatibility sample; no SLA, throughput, jitter or zero-loss qualification.",
+    "WSS used ordinary PCMU RTP, not browser ICE/DTLS-SRTP/WebRTC.",
+    "No operator trunks, customer numbers, PSTN calls, production changes or data migration.",
+    "Explicit lab configuration; reusable deployment charts and dynamic internal-address discovery are not implemented here.",
+    "The public worker received its IP after private bootstrap and guard setup; this run does not qualify first-boot public pools.",
+    "No SIP HA, active-call preservation, DTMF, re-INVITE/hold, Opus or load/soak acceptance.",
+    "The separate CSI native-volume expansion NO-GO is unchanged."
+  ]
+}

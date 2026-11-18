@@ -35,6 +35,12 @@ permanent Rancher public probe, controlled local firing/resolution, one authoriz
 Telegram test and real service-restart acceptance. Production edge/controller
 metrics and observer-host HA remain separate work.
 
+[Separate SIP/RTP network experiment](docs/voip-2026-11-18.md): public
+Kamailio/rtpengine to a private FreeSWITCH pod, verified UDP/TCP/TLS/WSS audio,
+reverse media and negative checks. It records Canal source-NAT and explicit RTP
+timer requirements. Browser WebRTC, operator interoperability and telephony HA
+remain separate acceptance work; SIP is not handled by this HTTP controller.
+
 Proposed HTTP/HTTPS/WSS entry: two standalone HAProxy VMs in the CLO project,
 one movable public IPv4, PROXYv2 to two private Kubernetes ingress instances.
 Certificates and HTTP routing remain in the ingress. SIP/RTP stays separate.
