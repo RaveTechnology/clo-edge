@@ -36,8 +36,8 @@ Telegram test and real service-restart acceptance. Production edge/controller
 metrics and observer-host HA remain separate work.
 
 [Separate SIP/RTP network experiment](docs/voip-2026-11-18.md): public
-Kamailio/rtpengine to a private FreeSWITCH pod, verified UDP/TCP/TLS/WSS audio,
-reverse media and negative checks. It records Canal source-NAT and explicit RTP
+Kamailio/rtpengine to a private FreeSWITCH pod, SIP over UDP/TCP/TLS/WSS with
+bidirectional PCMU media and negative checks. It records Canal source-NAT and explicit RTP
 timer requirements. Browser WebRTC, operator interoperability and telephony HA
 remain separate acceptance work; SIP is not handled by this HTTP controller.
 

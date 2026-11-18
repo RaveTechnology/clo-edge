@@ -132,7 +132,8 @@
       "receivedPackets": 248,
       "exactEchoFrames": 248,
       "activeCallSurvivalTested": false
-    }
+    },
+    "echoMatcher": "160-byte PCMU payload matches a cyclic alignment of the repeated 20 ms source waveform; no individual-packet correspondence or delay measurement"
   },
   "findings": {
     "hostVPCTrafficToRemotePodMasqueradedByFlannel": true,
