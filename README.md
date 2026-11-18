@@ -18,6 +18,13 @@ source STOPPED/OFF, reserve retained boot/service identity, independent public
 HTTPS 5/5 before and after. First observed response completed 129.472 s after fault
 injection; controller recorded completion 136.248 s. One sample, not an SLA.
 
+[Combined Rancher/RKE2/edge lab](docs/rke2-edge-2026-11-18.md): three private
+RKE2 nodes provisioned through Rancher, no false edge fence on node/shared-ingress
+loss, and automatic move to an initially private-only standby. First observed
+HTTPS response completed 126.939 s after the edge fault.
+The node observer had an interruption and request failures; production acceptance
+and permanent external alerting remain pending.
+
 Proposed HTTP/HTTPS/WSS entry: two standalone HAProxy VMs in the CLO project,
 one movable public IPv4, PROXYv2 to two private Kubernetes ingress instances.
 Certificates and HTTP routing remain in the ingress. SIP/RTP stays separate.

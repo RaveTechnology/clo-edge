@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-18",
+  "status": "combined-Rancher-RKE2-edge-lab-sample-passed",
+  "productionAccepted": false,
+  "controllerBinarySHA256": "3707827040f6408b938278ca9b87dec7c917a2680b6ef0e488bcd9eb003744ed",
+  "topology": {
+    "rancher": "2.15.3",
+    "nodeDriver": "0.1.0",
+    "uiExtension": "0.1.6",
+    "rke2": "v1.36.5+rke2r1",
+    "traefik": "v3.7.19",
+    "controller": "0.1.0-rc.1",
+    "temporaryVMs": 6,
+    "privateAllRoleRKE2Nodes": 3,
+    "perRKE2Node": {
+      "sharedVCPU": 2,
+      "ramGB": 4,
+      "bootGB": 20
+    },
+    "dedicatedHAProxyEdges": 2,
+    "independentPrivateController": 1,
+    "perHelperVM": {
+      "sharedVCPU": 1,
+      "ramGB": 2,
+      "bootGB": 10
+    },
+    "privateIngressInstances": 2,
+    "standbyInitiallyHadNoPublicAddress": true,
+    "permanentManagementPreserved": {
+      "sharedVCPU": 2,
+      "ramGB": 8
+    }
+  },
+  "results": {
+    "nativeRancherScaleOneTwoThree": true,
+    "threePrivateRKE2NodesReady": true,
+    "natDNSTLSEgress": true,
+    "httpAndHTTPSRequests": 12,
+    "headerSpoofCases": 6,
+    "actualTCPPeerPortCorrelations": 12,
+    "wsWssActiveAndIdleSessionsAtLeast90Seconds": 4,
+    "publicPROXYv1AndV2RejectedWithPacketReceiptProven": true,
+    "untrustedPrivateIngressAndHealthBlocked": true,
+    "threeMachineArchivesContainNoPlaintextOrBase64CLOKey": true,
+    "oneRKE2NodeLossDidNotFenceOrMoveEdge": true,
+    "threeRKE2NodesRestored": true,
+    "bothIngressStoppedAtLeast45SecondsWithoutFenceOrMove": true,
+    "automaticFailover": true,
+    "terminalStoppedAndOffFenceChecks": 8,
+    "targetOwnsVIP": true,
+    "standbyBootAndHAProxyUnchanged": true,
+    "oldWSSPhysicallyOnSourceAndUnusable": true,
+    "newWSSReconnected": true,
+    "realDaemonRestartCompletedDisarmedNoFailback": true
+  },
+  "timings": {
+    "faultToFirstSuccessfulWorkstationRequestStartSeconds": 122.395,
+    "faultToFirstSuccessfulWorkstationResponseCompleteSeconds": 126.939,
+    "faultToControllerRecordedCompletionSeconds": 134.839,
+    "firstObservedPhases": [
+      {
+        "phase": "Watching",
+        "firstObservedAfterFaultSeconds": 7.275
+      },
+      {
+        "phase": "Stopping",
+        "firstObservedAfterFaultSeconds": 44.419
+      },
+      {
+        "phase": "Detaching",
+        "firstObservedAfterFaultSeconds": 83.564
+      },
+      {
+        "phase": "Attaching",
+        "firstObservedAfterFaultSeconds": 97.406
+      },
+      {
+        "phase": "Verifying",
+        "firstObservedAfterFaultSeconds": 132.736
+      },
+      {
+        "phase": "Completed",
+        "firstObservedAfterFaultSeconds": 138.648
+      }
+    ]
+  },
+  "observers": {
+    "automaticFault": {
+      "samples": 40,
+      "failures": 28,
+      "sampleRetries": 0,
+      "perIOStepTimeoutSeconds": 5
+    },
+    "rke2NodeLoss": {
+      "samplesAcrossTwoInterruptedSegments": 83,
+      "failures": 25,
+      "failureKinds": {
+        "TimeoutError": 24,
+        "SSLCertVerificationError": 1
+      },
+      "continuousObservation": false,
+      "availabilityQualified": false
+    },
+    "independentGitHub": [
+      {
+        "stage": "before",
+        "samples": 5,
+        "successes": 5,
+        "runURL": "https://github.com/RaveTechnology/clo-edge/actions/runs/44292218007"
+      },
+      {
+        "stage": "after",
+        "samples": 5,
+        "successes": 5,
+        "runURL": "https://github.com/RaveTechnology/clo-edge/actions/runs/44295557727"
+      }
+    ]
+  },
+  "observability": {
+    "location": "native workstation processes outside CLO",
+    "publicTLSVerified": true,
+    "sharedIngressHTTPSDownFiringAndResolvedReceived": true,
+    "edgeFaultHTTPSDownFiringAndResolvedReceived": true,
+    "completedDisarmedAlertReceived": true,
+    "receiver": "own loopback webhook only",
+    "permanentProductionRecipientCommissioned": false,
+    "nativeProcessesStoppedAndOwnedContainersAbsent": true,
+    "otherConfiguredRulesNotFaultTriggered": [
+      "CLOControllerRecoveryRequired",
+      "CLOControllerMetricsMissing"
+    ]
+  },
+  "cleanup": {
+    "temporaryVMs404": 6,
+    "temporaryBootVolumes404": 6,
+    "ownedNAT404": true,
+    "ownedRancherClusterAndMachineConfigGone": true,
+    "permanentManagementAndCloudCredentialPreserved": true,
+    "independentNativeInventoryReadback": true,
+    "newReservedIPv4RetainedFree": 1,
+    "retainedIPv4MinimumAgeDays": 7,
+    "retainedIPv4EarliestDeleteUTC": "2026-11-25T10:32:05+00:00",
+    "retainedIPv4MonthlyRUB": 150,
+    "counts": {
+      "servers": 1,
+      "volumes": 1,
+      "addresses": 3,
+      "vrouters": 0,
+      "loadbalancers": 0,
+      "keypairs": 0
+    },
+    "ephemeralPublicProbeSecretRemoved": true
+  },
+  "limits": [
+    "One synthetic combined lab sample, not an SLA, throughput result or production acceptance.",
+    "First node-loss orchestrator ended with SIGTERM of unknown origin after its sole accepted stop. State was reconciled and the same node was started once; the observer has a gap.",
+    "Node-loss observers recorded 24 timeouts and one certificate-verification failure; no seamless backend-failover or outage attribution is claimed. Certificate verification was never disabled.",
+    "Functional HTTP/WS setup used bounded transport retries logged privately; timed automatic-fault samples had no retry.",
+    "First successful public response is not sustained availability. Later public probe failures also occurred; root network/provider attribution was not established.",
+    "The GUI form workflow was not repeated in this run; native Rancher machine provisioning was exercised.",
+    "Lab monitoring was temporary; a permanent outside-CLO location and human alert receiver remain to be commissioned.",
+    "No native lost-API-response injection, controller-host HA, automatic failback, load/soak qualification, SIP/RTP or production-data migration.",
+    "Separate CSI native-volume expansion NO-GO is unchanged."
+  ]
+}
