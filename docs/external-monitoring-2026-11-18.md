@@ -18,7 +18,8 @@ backup was saved. No CLO API credential is needed.
 Public probes run every 15s, require valid TLS/hostname, status 200 and the expected
 pong body, and follow no redirects. Rules hold HTTPS failures for 60s, warn on
 certificate expiry below 14 days, become critical below 3 days, and detect absent or
-unreachable probes. Seven semantic rule scenarios passed. Empty-rule and broken
+unreachable probes. Thirteen semantic rule scenarios passed, including both sides and the exact
+fourteen-day and three-day certificate boundaries. Empty-rule and broken
 exporter-detection negative controls failed as expected. A route negative control
 proved the permanent acceptance-label discard guard prevents synthetic alerts
 from reaching the human receiver.
@@ -34,7 +35,9 @@ The bot verified its identity with getChat. One alert was submitted to the
 separate test route; exactly one completed Telegram attempt and zero additional
 failures were observed. Test resolved notifications were disabled and the event
 had a two-minute expiry. No manual resubmission or human read receipt is claimed.
-Normal operational alerts include resolved messages.
+Normal operational alerts include resolved messages and each event's severity
+and status. Mixed warning-resolved/critical-firing messages were verified offline
+with the actual Alertmanager renderer, without another Telegram test.
 
 All three processes were restarted. They remained enabled on boot and produced a
 fresh successful TLS/body probe afterward. The host itself was not rebooted. Raw

@@ -1,0 +1,44 @@
+{
+  "receiver": "telegram-clo",
+  "status": "firing",
+  "groupLabels": {
+    "alertname": "CLOPublicTLSExpiring",
+    "instance": "https://rancher.example.invalid/ping"
+  },
+  "commonLabels": {
+    "alertname": "CLOPublicTLSExpiring",
+    "instance": "https://rancher.example.invalid/ping"
+  },
+  "commonAnnotations": {},
+  "externalURL": "http://localhost",
+  "alerts": [
+    {
+      "status": "resolved",
+      "labels": {
+        "alertname": "CLOPublicTLSExpiring",
+        "instance": "https://rancher.example.invalid/ping",
+        "severity": "warning"
+      },
+      "annotations": {
+        "summary": "CLO public TLS certificate expires soon"
+      },
+      "startsAt": "2026-11-18T00:00:00Z",
+      "endsAt": "2026-11-18T01:00:00Z",
+      "generatorURL": "https://example.invalid"
+    },
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "CLOPublicTLSExpiring",
+        "instance": "https://rancher.example.invalid/ping",
+        "severity": "critical"
+      },
+      "annotations": {
+        "summary": "CLO public TLS certificate expires soon"
+      },
+      "startsAt": "2026-11-18T00:00:00Z",
+      "endsAt": "2026-11-18T01:00:00Z",
+      "generatorURL": "https://example.invalid"
+    }
+  ]
+}

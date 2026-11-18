@@ -66,12 +66,14 @@
     "manualResubmissionPerformed": false
   },
   "validation": {
-    "semanticRuleScenarios": 7,
+    "semanticRuleScenarios": 13,
     "emptyRulesNegativeControlFailedAsExpected": true,
     "unreachableExporterNegativeControlFailedAsExpected": true,
     "acceptanceRouteNegativeControlFailedAsExpected": true,
     "pinnedConfigChecksPassed": true,
-    "raceVetPassed": true
+    "raceVetPassed": true,
+    "certificateThresholdBoundaryRegressionRejected": true,
+    "mixedSeverityAndStatusTemplateRenderPassed": true
   },
   "limits": [
     "One public endpoint monitor; /ping does not prove full Rancher, Kubernetes, workload or data health.",

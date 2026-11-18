@@ -30,7 +30,7 @@ configuration directory or units with these names.
 
 Create `/etc/rave-clo-monitor` as root:`rave-clo-monitor`, mode 0750. Install:
 
-- `blackbox.yml` and `alerts.yml` with their existing names;
+- `blackbox.yml`, `alerts.yml` and `telegram.tmpl` with their existing names;
 - `prometheus.example.yml` as `prometheus.yml`, changing file discovery to
   `/etc/rave-clo-monitor/targets.yml`;
 - `targets.example.yml` as `targets.yml`, replacing the `.invalid` target;
@@ -89,7 +89,8 @@ observer uses IPv4, verifies TLS 1.2 or newer, and follows no redirects. A healt
 
 Only alerts carrying `environment=clo` and `monitor=rave-clo` reach the normal
 Telegram receiver; unmatched alerts are discarded. Normal notifications include
-resolved events. Alerts carrying the reserved `acceptance_run` label are discarded
+resolved events. The message shows severity and status for each event, so a
+resolved warning and a firing critical alert remain distinguishable in one group. Alerts carrying the reserved `acceptance_run` label are discarded
 by the permanent configuration. A temporary loopback-only receiver may override
 that route during controlled fixture acceptance; restore the discard guard before
 removing the fixture or leaving commissioning.

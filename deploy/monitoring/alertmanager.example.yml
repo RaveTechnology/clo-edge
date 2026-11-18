@@ -31,9 +31,7 @@ receivers:
   - bot_token_file: /run/credentials/rave-clo-alertmanager.service/telegram-bot
     chat_id_file: /run/credentials/rave-clo-alertmanager.service/telegram-chat
     parse_mode: ''
-    message: "[CLO] {{ .Status | toUpper }} \u2014 {{ .CommonLabels.alertname }}\n\
-      {{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Labels.instance }}\n{{ end\
-      \ }}"
+    message: '{{ template "clo.telegram" . }}'
     send_resolved: true
 - name: telegram-test
   telegram_configs:
@@ -48,3 +46,5 @@ receivers:
       \u0442\u043E\u0432\u043E\u0435 \u0443\u0432\u0435\u0434\u043E\u043C\u043B\u0435\
       \u043D\u0438\u0435."
     send_resolved: false
+templates:
+- /etc/rave-clo-monitor/telegram.tmpl

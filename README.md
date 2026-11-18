@@ -23,7 +23,7 @@ RKE2 nodes provisioned through Rancher, no false edge fence on node/shared-ingre
 loss, and automatic move to an initially private-only standby. First observed
 HTTPS response completed 126.939 s after the edge fault.
 The node observer had an interruption and request failures; production acceptance
-and permanent external alerting remain pending.
+and permanent external alerting for the production edge remain pending.
 
 [External public monitoring](docs/external-monitoring.md) includes pinned native
 Prometheus/blackbox/Alertmanager examples, scoped Telegram delivery, private

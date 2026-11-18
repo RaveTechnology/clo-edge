@@ -1,0 +1,4 @@
+{{ define "clo.telegram" }}[CLO] {{ .Status | toUpper }} — {{ .CommonLabels.alertname }}
+{{ range .Alerts }}[{{ .Labels.severity }}] {{ .Status | toUpper }}: {{ .Annotations.summary }}
+{{ .Labels.instance }}
+{{ end }}{{ end }}
