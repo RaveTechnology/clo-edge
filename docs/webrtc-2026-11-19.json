@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-19",
+  "status": "bounded-browser-WebRTC-sample-passed",
+  "productionAccepted": false,
+  "topology": {
+    "temporaryNativeCLOVMs": 1,
+    "temporaryVM": {
+      "sharedVCPU": 2,
+      "ramGB": 4,
+      "bootGB": 20
+    },
+    "browserLocation": "separate local host over existing NAT and VPN path",
+    "privateBackend": "FreeSWITCH on a dedicated Docker bridge, no published backend ports",
+    "newPublicIPv4Allocations": 0,
+    "reusedPublicIPv4Addresses": 1,
+    "RancherUsedForThisDataPlane": false,
+    "permanentRancherPreserved": {
+      "sharedVCPU": 2,
+      "ramGB": 8
+    }
+  },
+  "versions": {
+    "browser": "Chrome 154.0.8037.92",
+    "SIPjs": "0.21.2",
+    "Kamailio": "6.1.3",
+    "rtpengine": "9.4.0.0",
+    "FreeSWITCH": "1.10.12"
+  },
+  "results": {
+    "outgoing": {
+      "establishedSeconds": 73.435,
+      "decodedRemoteAudioSeconds": 46.25066666666667,
+      "expectedFrequenciesHz": [
+        600,
+        1000
+      ],
+      "normalizedRMS": 0.17187912422398158
+    },
+    "incoming": {
+      "establishedSeconds": 74.013,
+      "decodedRemoteAudioSeconds": 47.36,
+      "expectedRemoteFrequencyHz": 800,
+      "normalizedRemoteRMS": 0.12789981758969896,
+      "independentFSStereoSeconds": 74.02,
+      "FSStereoReceivedFrequenciesHz": [
+        600,
+        1000
+      ],
+      "FSStereoTransmittedFrequencyHz": 800
+    },
+    "transport": {
+      "ICESelectedPairSucceededAndNominated": true,
+      "DTLSConnected": true,
+      "actualRemoteDERSHA256MatchedAllThreeSessionSDPFingerprints": true,
+      "observedDTLSCipher": "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+      "observedSRTPCipher": "SRTP_AEAD_AES_256_GCM",
+      "usedCodec": "PCMU/8000",
+      "publicWSSCertificateDefaultValidation": true,
+      "TLSBypassFlags": false,
+      "externalSTUNTURNServersConfigured": false
+    },
+    "controlledPrivateMediaDrop": {
+      "stableMeasurementSeconds": 5.12,
+      "ruleDropPackets": 482,
+      "browserReceivedPacketDelta": 0,
+      "browserSentPacketDelta": 256,
+      "receivedPacketDeltaAfterUnblock": 103,
+      "remainedEstablished": true,
+      "lastThreeBlockedAudioSecondsNormalizedRMS": 0.0
+    },
+    "negative": {
+      "untrustedTLSBrowserRejected": true,
+      "TLSBrowserReason": "ERR_CERT_AUTHORITY_INVALID",
+      "negativeTLSPort": 8443,
+      "invalidExtensionStatus": 404,
+      "wrongPasswordStatus": 403,
+      "reconnectedAndRegistered": true,
+      "freshCallAfterReconnect": true
+    },
+    "reconnect": {
+      "registeredAgain": true,
+      "freshEstablishedSeconds": 8.642,
+      "decodedFreshAudioSeconds": 8.192
+    },
+    "plainUDPRegression": {
+      "location": "same owned VM loopback; not an external NAT qualification",
+      "requestedSeconds": 5,
+      "sentPackets": 250,
+      "receivedPackets": 248,
+      "exactEchoFrames": 248,
+      "uniqueReceivedSequences": 248
+    },
+    "signalling": {
+      "allThreeQualifiedCallsBYEAnd200IndependentlyCaptured": true,
+      "incomingACKIndependentlyCaptured": true,
+      "freshCallACKIndependentlyCaptured": true
+    }
+  },
+  "fixture": {
+    "FSSofiaRTPTimer": "soft",
+    "fakeMicrophoneWAVUsed": true,
+    "realMicrophoneUsed": false,
+    "capturedTrackIsReceiverNotSender": true,
+    "hardwareAudibilityTested": false,
+    "WSSGate": "private random path and exact WebSocket connection tuple; REGISTER digest verified by FS",
+    "publicMedia": "ICE and DTLS-SRTP; administrative listeners kept private",
+    "configurationDeploymentChartsQualified": false
+  },
+  "cleanup": {
+    "ownedBrowserAndFixtureExited": true,
+    "activeFSCallsBeforeStop": 0,
+    "ownedNativeVMAndBootGone": true,
+    "ownedNATGone": true,
+    "projectBaselineRestored": true,
+    "protectedPublicIPv4RetainedFree": true,
+    "permanentRancherUnchanged": true,
+    "newTelegramTests": 0
+  },
+  "limits": [
+    "One dated bounded compatibility sample, not production acceptance, SLA, load or generic NAT coverage.",
+    "The local test path included VPN egress changes; workstation networking was not changed.",
+    "This data plane used a private Docker bridge, not a fresh Kubernetes/Canal experiment.",
+    "No real tenant UI or application credential API, customer/operator trunks, PSTN calls, data migration or production changes.",
+    "No telephony HA, active-call preservation, DTMF, hold/re-INVITE, Opus, transcoding or TURN acceptance.",
+    "The separate CSI native-volume expansion gate requires its own acceptance.",
+    "Operator-owned FreeSWITCH runtime bytes, raw captures, audio and credentials were not published."
+  ]
+}
