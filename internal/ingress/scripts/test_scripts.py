@@ -1,5 +1,11 @@
 import copy
+import contextlib
 import hashlib
+import io
+import json
+from pathlib import Path
+import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -8,6 +14,44 @@ import prepare_node
 
 
 class HostContracts(unittest.TestCase):
+    def test_new_worker_preparation_resumes_after_guest_side_effect_without_adoption(self):
+        c = {'node': {'project_id': 'project', 'provider_name': 'worker', 'attempt': 'attempt',
+                      'node_uid': 'node', 'server_id': 'server', 'private_ip': '10.0.0.20'},
+             'manager_id': 'manager', 'scope_hash': 'scope', 'edge_ips': ['10.0.0.10', '10.0.0.11'],
+             'observer_ip': '10.0.0.12', 'adopt_existing': False}
+        actual = {'schemaVersion': 1, 'projectID': 'project', 'providerName': 'worker', 'attempt': 'attempt'}
+        fail_enable = [True]
+        def run(args):
+            if args[:2] == ['systemctl', 'enable'] and fail_enable[0]:
+                fail_enable[0] = False
+                raise OSError('lost session after firewall files and kernel were updated')
+            if args[:2] == ['systemctl', 'show']: return '1234\n'
+            if args[:3] == ['nft', '-s', '-j']: return '{"nftables":[]}'
+            return 'active\n'
+        def read(path):
+            if str(path) == '/etc/clo/machine-identity.json': return json.dumps(actual).encode()
+            return path.read_bytes()
+        with tempfile.TemporaryDirectory() as directory, contextlib.ExitStack() as patches:
+            root = Path(directory) / 'state'; root.mkdir()
+            files = Path(directory) / 'guest'; files.mkdir()
+            for name, value in {'ROOT': root, 'RULES': files/'guard.nft', 'UNIT': files/'guard.service', 'DROPIN': files/'agent.d'/'guard.conf'}.items():
+                patches.enter_context(patch.object(prepare_node, name, value))
+            patches.enter_context(patch.object(prepare_node, 'private_dir'))
+            patches.enter_context(patch.object(prepare_node, 'read_regular', side_effect=read))
+            patches.enter_context(patch.object(prepare_node, 'atomic', side_effect=lambda p, b, mode=0o600: p.write_bytes(b)))
+            patches.enter_context(patch.object(prepare_node, 'run', side_effect=run))
+            patches.enter_context(patch.object(prepare_node.os, 'geteuid', return_value=0))
+            patches.enter_context(patch.object(prepare_node.os, 'open', return_value=42))
+            patches.enter_context(patch.object(prepare_node.fcntl, 'flock'))
+            patches.enter_context(patch.object(prepare_node.subprocess, 'run', return_value=SimpleNamespace(returncode=0, stdout=b'{"nftables":[]}')))
+            for attempt in range(2):
+                with patch.object(prepare_node.sys, 'stdin', SimpleNamespace(buffer=io.BytesIO(json.dumps(c).encode()))), patch('builtins.print'):
+                    if attempt == 0:
+                        with self.assertRaises(OSError): prepare_node.main()
+                    else:
+                        prepare_node.main()
+            self.assertTrue(json.loads((root/'receipt.json').read_text())['persistent_guard'])
+
     def test_reload_waits_for_the_new_runtime_socket_without_reloading_again(self):
         with patch.object(apply_edge, 'live', side_effect=[FileNotFoundError(), ConnectionRefusedError(), 'verified-state']) as live, patch.object(apply_edge.time, 'sleep'):
             self.assertEqual(apply_edge.wait_live('generation', ['10.0.0.20']), 'verified-state')

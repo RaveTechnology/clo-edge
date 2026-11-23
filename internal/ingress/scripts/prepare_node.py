@@ -115,6 +115,11 @@ def main():
     content = guard_rules(c['node']['private_ip'], c['edge_ips'], c['observer_ip']).encode()
     if not marker.exists() and RULES.exists():
         require(read_regular(RULES) == content, 'existing-policy-differs')
+    # Claim this exact manager/server before guest side effects. A lost SSH
+    # session after writing files must resume without adopting an unknown guard.
+    # This ownership marker alone never permits the readiness label.
+    if not marker.exists():
+        atomic(marker, json.dumps(expected).encode())
     unit = ('[Unit]\nAfter=network-online.target\nBefore=rke2-agent.service\n'
             '[Service]\nType=oneshot\nExecStart=/usr/sbin/nft -f /etc/rave-prod-ingress.nft\n'
             'RemainAfterExit=yes\n[Install]\nWantedBy=multi-user.target\n').encode()
@@ -142,7 +147,6 @@ def main():
         run(['systemctl', 'enable', '--now', 'rave-prod-ingress-firewall.service'])
         run(['systemctl', 'is-active', 'rave-prod-ingress-firewall.service'])
         run(['systemctl', 'is-enabled', 'rave-prod-ingress-firewall.service'])
-        atomic(marker, json.dumps(expected).encode())
     require(run(['systemctl', 'show', 'rke2-agent', '-p', 'MainPID', '--value']).strip() == pid, 'worker-agent-changed')
     kernel = json.loads(run(['nft', '-s', '-j', 'list', 'table', 'inet', 'rave_prod_ingress']))
     receipt = {'ok': True, 'node_uid': c['node']['node_uid'], 'server_id': c['node']['server_id'],
