@@ -14,6 +14,11 @@ Ready; there is no promise of serving traffic with zero ingress hosts. Select
 control-plane Nodes are excluded. Healthy accepted Node UIDs are retained; the
 default maximum is two, with a configurable bound of one through eight.
 
+`max_backends` limits the active HAProxy selection. Previously prepared workers
+retain their firewall and readiness label when this limit is lowered; their
+Traefik Pods may remain as prepared standby capacity. The manager does not remove
+a persistent safety guard to reduce a backend count.
+
 ## Authority and installation
 
 Run one fixed systemd installation; do not clone its machine-id/state or run a
