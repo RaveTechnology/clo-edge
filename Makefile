@@ -28,6 +28,7 @@ image:
 
 .PHONY: monitoring-check
 monitoring-check:
+	docker run --rm --network none -v "$(CURDIR)/deploy/ingress:/etc/rave-clo-ingress:ro" -w /etc/rave-clo-ingress --entrypoint /bin/promtool quay.io/prometheus/prometheus@sha256:9332054523223e2ddc18d8101799d54a4a8d823b030c53216f063a6c117773cd test rules alerts.test.yml
 	docker run --rm --network none -v "$(CURDIR)/deploy/monitoring:/etc/rave-clo-monitor:ro" -w /etc/rave-clo-monitor --entrypoint /bin/promtool quay.io/prometheus/prometheus@sha256:9332054523223e2ddc18d8101799d54a4a8d823b030c53216f063a6c117773cd check config prometheus.example.yml
 	docker run --rm --network none -v "$(CURDIR)/deploy/monitoring:/etc/rave-clo-monitor:ro" -w /etc/rave-clo-monitor --entrypoint /bin/promtool quay.io/prometheus/prometheus@sha256:9332054523223e2ddc18d8101799d54a4a8d823b030c53216f063a6c117773cd test rules alerts.test.yml
 	docker run --rm --network none -v "$(CURDIR)/deploy/monitoring:/etc/rave-clo-monitor:ro" -w /etc/rave-clo-monitor --entrypoint /bin/amtool quay.io/prometheus/alertmanager@sha256:5f6e66c01bd610aef6dd671642a52eee775fd3a89bd8788ebada33efaf373d10 check-config alertmanager.example.yml

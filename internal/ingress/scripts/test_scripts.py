@@ -1,12 +1,21 @@
 import copy
 import hashlib
 import unittest
+from unittest.mock import patch
 
 import apply_edge
 import prepare_node
 
 
 class HostContracts(unittest.TestCase):
+    def test_reload_waits_for_the_new_runtime_socket_without_reloading_again(self):
+        with patch.object(apply_edge, 'live', side_effect=[FileNotFoundError(), ConnectionRefusedError(), 'verified-state']) as live, patch.object(apply_edge.time, 'sleep'):
+            self.assertEqual(apply_edge.wait_live('generation', ['10.0.0.20']), 'verified-state')
+            self.assertEqual(live.call_count, 3)
+        with patch.object(apply_edge, 'live', side_effect=FileNotFoundError()), patch.object(apply_edge.time, 'monotonic', side_effect=[0, 11]):
+            with self.assertRaises(ValueError):
+                apply_edge.wait_live('generation', [])
+
     def test_edge_candidate_validates_utf8_content_and_ownership_prefix(self):
         generation = '11111111-1111-4111-8111-111111111111'
         content = '# Managed by clo-ingress; generation ' + generation + '\nglobal\n'

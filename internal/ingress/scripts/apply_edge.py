@@ -119,6 +119,16 @@ def candidate_content(c):
     return content
 
 
+def wait_live(generation, targets):
+    deadline = time.monotonic() + 10
+    while True:
+        try:
+            return live(generation, targets)
+        except (OSError, ValueError):
+            require(time.monotonic() < deadline, 'new-runtime-not-confirmed')
+            time.sleep(0.1)
+
+
 def main():
     os.umask(0o077)
     require(os.geteuid() == 0, 'root-required')
@@ -186,7 +196,7 @@ def main():
             atomic(backup, current)
         atomic(CONFIG, content, 0o644)
         command(['systemctl', 'reload', 'haproxy'])
-        runtime = live(generation, c['targets'])
+        runtime = wait_live(generation, c['targets'])
     require(command(['systemctl', 'is-active', 'haproxy']).strip() == 'active', 'haproxy-not-active')
     result = {'ok': True, 'edge_id': c['edge_id'], 'generation': generation,
               'config_sha256': digest, 'servers_state': runtime}
