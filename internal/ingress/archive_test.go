@@ -67,3 +67,17 @@ func TestRealRancherNameOnlyNodeRefStillPinsObservedNodeUID(t *testing.T) {
 		t.Fatal("foreign NodeRef name accepted")
 	}
 }
+
+func TestRealRancherAbsoluteArchiveIsReadOnlyAndBoundToCurrentMachine(t *testing.T) {
+	prefix := "/home/machine/.docker/machine/machines/worker-a/"
+	entries := map[string]string{prefix + "config.json": `{"Driver":{"MachineName":"worker-a","IPAddress":"10.0.0.20","Ownership":{"ServerID":"99999999-9999-4999-8999-999999999999","BootVolumeIDs":["dddddddd-dddd-4ddd-8ddd-dddddddddddd"]}}}`, prefix + "id_rsa": "fixture-private-key"}
+	state, err := ParseArchive(makeArchive(t, entries), "worker-a")
+	if err != nil || state.MachineName != "worker-a" || string(state.PrivateKey) != "fixture-private-key" {
+		t.Fatalf("real Rancher absolute machine prefix rejected: %v", err)
+	}
+	for _, foreign := range []string{"/etc/config.json", "/home/machine/.docker/machine/machines/worker-b/config.json", prefix + "../config.json"} {
+		if _, err := ParseArchive(makeArchive(t, map[string]string{foreign: entries[prefix+"config.json"]}), "worker-a"); err == nil {
+			t.Fatal("foreign absolute machine prefix accepted")
+		}
+	}
+}

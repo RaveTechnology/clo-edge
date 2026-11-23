@@ -63,6 +63,7 @@ def atomic(path, value, mode=0o600):
 
 
 def guard_rules(node_ip, edges, observer):
+    edges = sorted(edges, key=ipaddress.IPv4Address)
     ips = [ipaddress.IPv4Address(ip) for ip in [node_ip, *edges, observer]]
     require(all(ip.is_private for ip in ips) and len(edges) == 2
             and len(set(ips)) == 4, 'invalid-private-guard-topology')

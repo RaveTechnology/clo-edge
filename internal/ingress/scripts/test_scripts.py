@@ -6,6 +6,11 @@ import prepare_node
 
 
 class HostContracts(unittest.TestCase):
+    def test_equivalent_edge_order_preserves_existing_guard_adoption(self):
+        forward = prepare_node.guard_rules('10.0.0.20', ['10.0.0.10', '10.0.0.11'], '10.0.0.12')
+        reverse = prepare_node.guard_rules('10.0.0.20', ['10.0.0.11', '10.0.0.10'], '10.0.0.12')
+        self.assertEqual(forward, reverse)
+
     def test_guard_rejects_aliasing_and_nonprivate_health_topology(self):
         value = prepare_node.guard_rules('10.0.0.20', ['10.0.0.10', '10.0.0.11'], '10.0.0.12')
         self.assertIn('tcp dport 9000 ip saddr 10.0.0.12/32 accept', value)
