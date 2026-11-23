@@ -1,0 +1,33 @@
+[Unit]
+Description=Rancher private ingress worker reconciler
+Wants=network-online.target
+After=network-online.target k3s.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+UMask=0077
+LoadCredential=clo-token:/etc/clo-ingress/clo-token
+LoadCredential=edge-key:/etc/clo-ingress/edge-key
+ExecStart=/usr/local/bin/clo-ingress run --config /etc/clo-ingress/config.json
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=20
+StateDirectory=clo-ingress
+StateDirectoryMode=0700
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/clo-ingress
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+MemoryMax=384M
+TasksMax=128
+
+[Install]
+WantedBy=multi-user.target

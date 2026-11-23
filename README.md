@@ -75,3 +75,13 @@ The earlier experiment did not test automatic failover; local controller
 acceptance and any subsequent native acceptance must be reported separately.
 
 [Cleaned measurements](docs/ip-transfer-2026-11-17.json). Apache-2.0.
+
+
+## Automatic Rancher ingress workers
+
+The native `clo-ingress` companion automatically prepares private general workers,
+labels them after firewall verification, and updates both HAProxy edges when
+Node identities or addresses change. It runs on the existing management host and
+never provisions or powers cloud resources. See [installation and recovery](docs/ingress-operations.md).
+The scratch `clo-edge` image remains the VIP controller; the SSH/kubectl companion
+is distributed in the native binary archive.

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"slices"
 	"time"
 )
@@ -66,6 +67,9 @@ func (k *Kubernetes) request(ctx context.Context, management bool, args []string
 		binary = "/usr/local/bin/kubectl"
 	}
 	argv := []string{"--kubeconfig=" + path, "--request-timeout=25s"}
+	if k.Config.StateDir != "" {
+		argv = append(argv, "--cache-dir="+filepath.Join(k.Config.StateDir, "kubectl-cache"))
+	}
 	argv = append(argv, args...)
 	argv = append(argv, "-o", "json")
 	raw, err := k.Runner.Run(ctx, binary, argv, nil)

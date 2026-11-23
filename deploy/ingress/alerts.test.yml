@@ -1,0 +1,53 @@
+rule_files:
+- alerts.yml
+evaluation_interval: 30s
+tests:
+- interval: 30s
+  input_series:
+  - series: 'rave_clo_ingress_discovery_enabled{cluster="fixture"}'
+    values: '1x12'
+  - series: 'rave_clo_ingress_discovery_valid{cluster="fixture"}'
+    values: '1x12'
+  - series: 'rave_clo_ingress_discovery_last_success_timestamp_seconds{cluster="fixture"}'
+    values: '0+30x12'
+  alert_rule_test:
+  - eval_time: 5m
+    alertname: CloIngressDiscoveryStale
+    exp_alerts: []
+  - eval_time: 5m
+    alertname: CloIngressDiscoveryInvalid
+    exp_alerts: []
+- interval: 30s
+  input_series:
+  - series: 'rave_clo_ingress_discovery_enabled{cluster="fixture"}'
+    values: '1x12'
+  - series: 'rave_clo_ingress_discovery_valid{cluster="fixture"}'
+    values: '1x12'
+  - series: 'rave_clo_ingress_discovery_last_success_timestamp_seconds{cluster="fixture"}'
+    values: '0x12'
+  alert_rule_test:
+  - eval_time: 5m
+    alertname: CloIngressDiscoveryStale
+    exp_alerts:
+    - exp_labels:
+        cluster: fixture
+        component: ingress
+        severity: warning
+      exp_annotations:
+        summary: Automatic ingress discovery stopped updating
+- interval: 30s
+  input_series:
+  - series: 'rave_clo_ingress_discovery_enabled{cluster="fixture"}'
+    values: '1x12'
+  - series: 'rave_clo_ingress_discovery_valid{cluster="fixture"}'
+    values: '0x12'
+  alert_rule_test:
+  - eval_time: 5m
+    alertname: CloIngressDiscoveryInvalid
+    exp_alerts:
+    - exp_labels:
+        cluster: fixture
+        component: ingress
+        severity: critical
+      exp_annotations:
+        summary: Automatic ingress discovery identity or content is invalid

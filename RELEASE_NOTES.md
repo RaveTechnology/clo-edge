@@ -1,3 +1,11 @@
+# v0.2.0-rc.1 — automatic ingress worker reconciliation
+
+Adds the native clo-ingress companion for Rancher RKE2 private workers: identity-bound firewall preparation, guarded ingress-ready labels, live HAProxy generation verification and current backend discovery for external health checks. Runs on an existing fixed management host; no permanent VM or cloud-write capability is added. Default mode is observe-only.
+
+The binary archive now includes both clo-edge and clo-ingress. The existing scratch image still runs the VIP controller. Existing VIP journals and recovery gates are unchanged. This release does not claim CSI recovery, controller-host HA or uninterrupted service after deleting every eligible ingress worker.
+
+Previous accepted features and limitations remain below.
+
 # Experimental CLO edge controller
 
 One fixed management host, two dedicated HAProxy VMs, one configured external IPv4.

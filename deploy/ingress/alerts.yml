@@ -1,0 +1,20 @@
+groups:
+- name: clo-ingress-discovery
+  interval: 30s
+  rules:
+  - alert: CloIngressDiscoveryStale
+    expr: (rave_clo_ingress_discovery_enabled == 1) and on(cluster) (time() - rave_clo_ingress_discovery_last_success_timestamp_seconds > 120)
+    for: 2m
+    labels:
+      component: ingress
+      severity: warning
+    annotations:
+      summary: Automatic ingress discovery stopped updating
+  - alert: CloIngressDiscoveryInvalid
+    expr: (rave_clo_ingress_discovery_enabled == 1) and on(cluster) (rave_clo_ingress_discovery_valid < 1)
+    for: 2m
+    labels:
+      component: ingress
+      severity: critical
+    annotations:
+      summary: Automatic ingress discovery identity or content is invalid

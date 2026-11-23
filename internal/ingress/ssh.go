@@ -25,7 +25,7 @@ func (r *LiveRuntime) remote(ctx context.Context, id, ip, key string, worker boo
 	if worker {
 		policy = "accept-new"
 	}
-	args := []string{"-i", key, "-o", "IdentitiesOnly=yes", "-o", "BatchMode=yes", "-o", "ControlMaster=no", "-o", "ControlPath=none", "-o", "StrictHostKeyChecking=" + policy, "-o", "HostKeyAlias=" + id, "-o", "UserKnownHostsFile=" + r.Config.KnownHostsFile, "-o", "HostKeyAlgorithms=ssh-ed25519", "-o", "ConnectTimeout=6", "-o", "ServerAliveInterval=5", "-o", "ServerAliveCountMax=2", "root@" + address.String(), "python3 -c " + shellQuote(program)}
+	args := []string{"-F", "/dev/null", "-i", key, "-o", "IdentitiesOnly=yes", "-o", "BatchMode=yes", "-o", "ControlMaster=no", "-o", "ControlPath=none", "-o", "StrictHostKeyChecking=" + policy, "-o", "HostKeyAlias=" + id, "-o", "UserKnownHostsFile=" + r.Config.KnownHostsFile, "-o", "HostKeyAlgorithms=ssh-ed25519", "-o", "ConnectTimeout=6", "-o", "ServerAliveInterval=5", "-o", "ServerAliveCountMax=2", "root@" + address.String(), "python3 -c " + shellQuote(program)}
 	body, err := json.Marshal(input)
 	if err != nil {
 		return err
