@@ -111,6 +111,14 @@ def verify_runtime_state(value, targets):
     return value
 
 
+def candidate_content(c):
+    content = c['config'].encode()
+    digest = hashlib.sha256(content).hexdigest()
+    require(digest == c['config_sha256'] and len(content) < 128 * 1024, 'config-hash-mismatch')
+    require(content.startswith(('# Managed by clo-ingress; generation ' + c['generation'] + '\n').encode()), 'unmanaged-candidate')
+    return content
+
+
 def main():
     os.umask(0o077)
     require(os.geteuid() == 0, 'root-required')
@@ -139,10 +147,8 @@ def main():
         atomic(owner, json.dumps(expected).encode())
     generation = c['generation']
     require(re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9-]{0,63}', generation), 'invalid-generation')
-    content = c['config'].encode()
+    content = candidate_content(c)
     digest = hashlib.sha256(content).hexdigest()
-    require(digest == c['config_sha256'] and len(content) < 128 * 1024, 'config-hash-mismatch')
-    require(content.startswith('# Managed by clo-ingress; generation ' + generation + '\n'), 'unmanaged-candidate')
     candidate = ROOT / ('candidate-' + generation + '.cfg')
     if candidate.exists():
         require(read(candidate) == content, 'generation-reused-with-different-config')

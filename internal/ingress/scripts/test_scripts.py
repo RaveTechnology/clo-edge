@@ -1,4 +1,5 @@
 import copy
+import hashlib
 import unittest
 
 import apply_edge
@@ -6,6 +7,17 @@ import prepare_node
 
 
 class HostContracts(unittest.TestCase):
+    def test_edge_candidate_validates_utf8_content_and_ownership_prefix(self):
+        generation = '11111111-1111-4111-8111-111111111111'
+        content = '# Managed by clo-ingress; generation ' + generation + '\nglobal\n'
+        value = {'generation': generation, 'config': content,
+                 'config_sha256': hashlib.sha256(content.encode()).hexdigest()}
+        self.assertEqual(apply_edge.candidate_content(value), content.encode())
+        for field, bad in [('generation', 'foreign'), ('config_sha256', '0' * 64)]:
+            changed = dict(value, **{field: bad})
+            with self.assertRaises(ValueError):
+                apply_edge.candidate_content(changed)
+
     def test_equivalent_edge_order_preserves_existing_guard_adoption(self):
         forward = prepare_node.guard_rules('10.0.0.20', ['10.0.0.10', '10.0.0.11'], '10.0.0.12')
         reverse = prepare_node.guard_rules('10.0.0.20', ['10.0.0.11', '10.0.0.10'], '10.0.0.12')
