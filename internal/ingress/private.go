@@ -145,3 +145,38 @@ func (c *Config) ValidateRuntime() error {
 	}
 	return privateDirectory(c.StateDir)
 }
+
+// Do not bind an unauthenticated archive key permanently. A lost preparation
+// reply can be retried from the same archive; only a verified guest commits it.
+func stageWorkerKey(path string, data []byte) (string, func(), error) {
+	if _, err := os.Lstat(path); err == nil {
+		if err := writePrivate(path, data); err != nil {
+			return "", nil, err
+		}
+		return path, func() {}, nil
+	}
+	if len(data) == 0 || len(data) > 1<<20 {
+		return "", nil, errors.New("invalid worker key size")
+	}
+	file, err := os.CreateTemp(filepath.Dir(path), ".unconfirmed-key-")
+	if err != nil {
+		return "", nil, err
+	}
+	name := file.Name()
+	cleanup := func() { _ = os.Remove(name) }
+	if err = file.Chmod(0600); err == nil {
+		_, err = file.Write(data)
+	}
+	if err == nil {
+		err = file.Sync()
+	}
+	closeErr := file.Close()
+	if err == nil {
+		err = closeErr
+	}
+	if err != nil {
+		cleanup()
+		return "", nil, err
+	}
+	return name, cleanup, nil
+}

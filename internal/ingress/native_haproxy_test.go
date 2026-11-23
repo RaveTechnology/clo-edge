@@ -44,6 +44,19 @@ func TestNativeHAProxyGenerationRuntimeAndGracefulReload(t *testing.T) {
 			t.Fatalf("real HAProxy parser rejected dynamic targets: %s %v", output, err)
 		}
 	}
+	// Exercise the actual Python withdrawal renderer with the real HAProxy parser.
+	full := render([]string{"10.0.0.30", "10.0.0.31"}, "subset")
+	subset := exec.Command("python3", "-c", "import sys;sys.path.insert(0,'scripts');import apply_edge;sys.stdout.buffer.write(apply_edge.subset_config(sys.stdin.buffer.read(),'subset-withdraw',['10.0.0.31']))")
+	subset.Stdin = strings.NewReader(full)
+	rendered, err := subset.Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	parse := exec.Command("docker", "run", "--rm", "--network", "none", "-i", "--entrypoint", "haproxy", nativeHAProxyImage, "-c", "-f", "/dev/stdin")
+	parse.Stdin = strings.NewReader(string(rendered))
+	if out, err := parse.CombinedOutput(); err != nil {
+		t.Fatalf("withdrawal subset rejected: %s %v", out, err)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 	args := []string{"create", "--network", "none", "--user", "0", "--entrypoint", "haproxy", nativeHAProxyImage, "-W", "-db", "-f", "/tmp/current.cfg"}

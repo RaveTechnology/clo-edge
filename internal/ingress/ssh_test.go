@@ -40,3 +40,10 @@ func TestRuntimeStateProofRejectsWrongOrMissingTargets(t *testing.T) {
 		}
 	}
 }
+
+func TestRealChildStdoutCannotBypassLimitThroughReadFrom(t *testing.T) {
+	out, err := (ExecRunner{}).Run(context.Background(), "/usr/bin/python3", []string{"-c", "import sys;sys.stdout.write('x'*(17*1024*1024))"}, nil)
+	if err == nil || len(out) > 16<<20 {
+		t.Fatalf("real child exceeded output bound: bytes=%d error=%v", len(out), err)
+	}
+}

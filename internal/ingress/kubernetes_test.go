@@ -125,3 +125,21 @@ func TestFreshNodeChangesBlockReadinessMutation(t *testing.T) {
 		})
 	}
 }
+
+func TestMalformedListIsNotAuthoritativeEmptyInventory(t *testing.T) {
+	cfg, _ := fixture(t)
+	for _, body := range []string{`{}`, `null`, `{"items":null}`, `{"items":[null]}`} {
+		source := Kubernetes{Config: cfg, Runner: runFunc(func(_ context.Context, _ string, args []string, _ []byte) ([]byte, error) {
+			if slices.Contains(args, "clusters.provisioning.cattle.io") {
+				return []byte(`{"metadata":{"uid":"` + cfg.ProvisioningClusterUID + `"}}`), nil
+			}
+			if slices.Contains(args, "namespace") {
+				return []byte(`{"metadata":{"uid":"` + cfg.DownstreamSystemUID + `"}}`), nil
+			}
+			return []byte(body), nil
+		})}
+		if _, err := source.Discover(context.Background()); err == nil {
+			t.Fatalf("malformed LIST accepted: %s", body)
+		}
+	}
+}

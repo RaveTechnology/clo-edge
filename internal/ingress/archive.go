@@ -60,6 +60,12 @@ func ParseArchive(blob []byte, machine string) (DriverState, error) {
 		// Rancher stores absolute paths inside its machine-state tar. Never
 		// extract them; accept only this exact current-machine archive root.
 		root := "/home/machine/.docker/machine/machines/" + machine
+		if !path.IsAbs(name) {
+			root = "machines/" + machine
+		}
+		if path.Clean(name) != strings.TrimSuffix(name, "/") {
+			return out, reject
+		}
 		if path.IsAbs(name) && name != root && !strings.HasPrefix(name, root+"/") {
 			return out, reject
 		}
@@ -81,6 +87,9 @@ func ParseArchive(blob []byte, machine string) (DriverState, error) {
 		}
 		switch path.Base(name) {
 		case "config.json":
+			if path.Dir(name) != root {
+				return out, reject
+			}
 			configs++
 			if configs != 1 {
 				return out, reject
@@ -93,6 +102,9 @@ func ParseArchive(blob []byte, machine string) (DriverState, error) {
 			out = wrapper.Driver
 			out.PrivateKey = key
 		case "id_rsa":
+			if path.Dir(name) != root {
+				return out, reject
+			}
 			keys++
 			if keys != 1 || len(payload) > 64<<10 {
 				return out, reject

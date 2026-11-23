@@ -81,3 +81,14 @@ func TestRealRancherAbsoluteArchiveIsReadOnlyAndBoundToCurrentMachine(t *testing
 		}
 	}
 }
+
+func TestArchiveConfigAndKeyMustBeDirectChildrenOfSameMachineRoot(t *testing.T) {
+	for _, root := range []string{"machines/worker-a/", "/home/machine/.docker/machine/machines/worker-a/"} {
+		for _, key := range []string{"foreign/id_rsa", root + "nested/id_rsa"} {
+			blob := makeArchive(t, map[string]string{root + "config.json": `{"Driver":{"MachineName":"worker-a"}}`, key: "wrong-key"})
+			if _, err := ParseArchive(blob, "worker-a"); err == nil {
+				t.Fatalf("mixed machine archive accepted: %s", key)
+			}
+		}
+	}
+}

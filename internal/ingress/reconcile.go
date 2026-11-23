@@ -56,86 +56,174 @@ func (e *Engine) Tick(ctx context.Context, now time.Time) (returned error) {
 		st.LastError = ""
 		return e.Store.Save(st)
 	}
-	publish := func(targets []Identity) error {
-		if st.Pending == nil || !reflect.DeepEqual(st.Pending.Targets, targets) {
-			st.Pending = &Publication{Generation: uuid.NewString(), Targets: targets}
+	retained := append([]Candidate{}, available...)
+	unknown := false
+	for _, c := range snapshot.Candidates {
+		if unknownBinding(c) {
+			unknown = true
 		}
+	}
+	for _, old := range st.Targets {
+		if c, ok := retainedUnknown(e.Config, snapshot, old); ok {
+			retained = append(retained, c)
+		}
+	}
+	exported := false
+	publish := func(targets []Identity, withdraw bool) error {
+		if st.Pending == nil || !reflect.DeepEqual(st.Pending.Targets, targets) {
+			g := uuid.NewString()
+			if st.Generation != "" && reflect.DeepEqual(st.Targets, targets) {
+				g = st.Generation
+			}
+			st.Pending = &Publication{Generation: g, Targets: append([]Identity{}, targets...), WithdrawOnly: withdraw}
+		}
+		st.Pending.WithdrawOnly = withdraw
 		st.Phase = "Publishing"
 		if err := e.Store.Save(st); err != nil {
 			return err
 		}
-		result, err := e.Runtime.Publish(ctx, *st.Pending)
-		if err != nil {
-			return err
+		result, publishErr := e.Runtime.Publish(ctx, *st.Pending)
+		st.PublicationResult = result
+		if publishErr != nil {
+			_ = e.Store.Save(st)
+			return publishErr
 		}
 		if len(result.AppliedEdges) == 0 {
 			return errors.New("no owned edge accepted publication")
 		}
 		st.Targets = append([]Identity{}, targets...)
 		st.Generation = st.Pending.Generation
-		st.PublicationResult = result
 		st.Pending = nil
-		return e.Store.Save(st)
-	}
-	survivors := Survivors(st.Targets, available)
-	pendingInvalid := st.Pending != nil && len(Survivors(st.Pending.Targets, available)) != len(st.Pending.Targets)
-	if len(survivors) != len(st.Targets) || pendingInvalid {
-		if err := publish(survivors); err != nil {
+		if err := e.Store.Save(st); err != nil {
 			return err
 		}
+		if err := e.Runtime.Export(ctx, st); err != nil {
+			return err
+		}
+		exported = true
+		return nil
+	}
+	survivors := Survivors(st.Targets, retained)
+	pendingInvalid := st.Pending != nil && len(Survivors(st.Pending.Targets, retained)) != len(st.Pending.Targets)
+	if len(survivors) != len(st.Targets) || pendingInvalid {
+		if err := publish(survivors, true); err != nil {
+			return err
+		}
+	} else if st.Generation != "" && st.Pending == nil {
+		if err := publish(st.Targets, true); err != nil {
+			return err
+		}
+	}
+	if unknown {
+		return errors.New("current machine binding temporarily unknown; no new adoption")
 	}
 	preferred := append([]Identity{}, st.Targets...)
 	if st.Pending != nil {
 		preferred = append(preferred, st.Pending.Targets...)
 	}
-	selected := Select(available, preferred, e.Config.MaxBackends)
-	ready := []Identity{}
-	for _, candidate := range selected {
-		identity := candidate.Identity
+	ordered := Select(available, preferred, len(available))
+	existing, newCandidates := []Candidate{}, []Candidate{}
+	for _, c := range ordered {
+		found := false
+		for _, p := range preferred {
+			if p.Equal(c.Identity) {
+				found = true
+				break
+			}
+		}
+		if found {
+			existing = append(existing, c)
+		} else {
+			newCandidates = append(newCandidates, c)
+		}
+	}
+	if len(newCandidates) > 0 {
+		at := st.CandidateCursor % len(newCandidates)
+		newCandidates = append(append([]Candidate{}, newCandidates[at:]...), newCandidates[:at]...)
+	}
+	ordered = append(existing, newCandidates...)
+	ready, uncertain := []Identity{}, []Identity{}
+	failures := []error{}
+	for index, c := range ordered {
+		if len(ready) >= e.Config.MaxBackends {
+			break
+		}
+		if ctx.Err() != nil {
+			failures = append(failures, ctx.Err())
+			break
+		}
+		if index >= len(existing) {
+			st.CandidateCursor++
+		}
+		identity := c.Identity
 		st.Preparing = &identity
 		st.Phase = "Preparing"
 		if err := e.Store.Save(st); err != nil {
 			return err
 		}
-		if err := e.Runtime.Prepare(ctx, candidate); err != nil {
-			return err
+		attempt, stop := context.WithTimeout(ctx, 15*time.Second)
+		err := e.Runtime.Prepare(attempt, c)
+		if err == nil {
+			st.Phase = "Labeling"
+			err = e.Store.Save(st)
+			if err == nil {
+				err = e.Runtime.SetReady(attempt, c)
+			}
 		}
-		st.Phase = "Labeling"
-		if err := e.Store.Save(st); err != nil {
-			return err
+		ok := false
+		if err == nil {
+			st.Phase = "WaitingForTraefik"
+			err = e.Store.Save(st)
+			if err == nil {
+				ok, err = e.Runtime.BackendReady(attempt, c)
+			}
 		}
-		if err := e.Runtime.SetReady(ctx, candidate); err != nil {
-			return err
+		stop()
+		if err != nil {
+			failures = append(failures, err)
+			for _, old := range st.Targets {
+				if old.Equal(identity) {
+					uncertain = append(uncertain, old)
+				}
+			}
+			continue
 		}
+		if ok {
+			ready = append(ready, identity)
+		}
+	}
+	for _, old := range uncertain {
+		if len(ready) < e.Config.MaxBackends {
+			ready = append(ready, old)
+		}
+	}
+	if st.Generation == "" && len(ready) == 0 && len(snapshot.Candidates) > 0 {
 		st.Phase = "WaitingForTraefik"
 		if err := e.Store.Save(st); err != nil {
 			return err
 		}
-		ok, err := e.Runtime.BackendReady(ctx, candidate)
-		if err != nil {
-			return err
-		}
-		if ok {
-			ready = append(ready, candidate.Identity)
-		}
+		return errors.Join(failures...)
 	}
-	if st.Pending != nil || !reflect.DeepEqual(st.Targets, ready) || len(st.PublicationResult.PendingEdges) > 0 {
-		if err := publish(ready); err != nil {
+	if st.Pending != nil || !reflect.DeepEqual(st.Targets, ready) || len(st.PublicationResult.PendingEdges) > 0 || !exported {
+		if err := publish(ready, false); err != nil {
 			return err
 		}
 	}
 	st.Preparing = nil
 	st.LastError = ""
 	st.Phase = "Ready"
+	if len(st.PublicationResult.PendingEdges) > 0 {
+		st.Phase = "PendingEdges"
+	}
 	if len(ready) == 0 {
 		st.Phase = "WaitingForNodes"
 	}
 	if err := e.Store.Save(st); err != nil {
 		return err
 	}
-	if err := e.Runtime.Export(ctx, st); err != nil {
-		return err
-	}
 	st.LastSuccess = now
+	if len(ready) == 0 && len(failures) > 0 {
+		return errors.Join(failures...)
+	}
 	return e.Store.Save(st)
 }

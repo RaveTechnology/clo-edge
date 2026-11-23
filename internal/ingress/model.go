@@ -180,3 +180,24 @@ func Select(available []Candidate, previous []Identity, maximum int) []Candidate
 	}
 	return out
 }
+
+// A missing archive may retain an already accepted incarnation, never adopt a new
+// one. Current Node/Machine and complete native ownership must still match.
+func unknownBinding(c Candidate) bool { return c.Pending && c.ServerID == "" && c.ProjectID == "" }
+func retainedUnknown(cfg Config, s Snapshot, old Identity) (Candidate, bool) {
+	for _, c := range s.Candidates {
+		if !unknownBinding(c) || c.Name != old.Name || c.NodeUID != old.NodeUID || c.MachineUID != old.MachineUID || c.PrivateIP != old.PrivateIP || !c.Ready || !c.Schedulable || c.ControlPlane || c.Workload != "general" || c.OS != "linux" || c.Arch != "amd64" {
+			continue
+		}
+		if c.NodeRefName != "" && c.NodeRefName != old.Name || c.NodeRefUID != "" && c.NodeRefUID != old.NodeUID {
+			continue
+		}
+		c.Identity = old
+		c.NodeRefName = old.Name
+		c.Pending = false
+		if verifyCandidate(cfg, c, s.Inventory) == nil {
+			return c, true
+		}
+	}
+	return Candidate{}, false
+}

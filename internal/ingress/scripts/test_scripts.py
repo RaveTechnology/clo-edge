@@ -14,6 +14,65 @@ import prepare_node
 
 
 class HostContracts(unittest.TestCase):
+    def test_uncertain_reload_is_not_blindly_replayed(self):
+        generation='22222222-2222-4222-8222-222222222222';new=b'new-config';old=b'old-config';reloads=[]
+        def command(args):
+            if args[:2]==['systemctl','reload']:reloads.append(True)
+            return '0' if 'Job' in args else 'active'
+        with tempfile.TemporaryDirectory() as tmp, contextlib.ExitStack() as patches:
+            root=Path(tmp);config=root/'haproxy.cfg';config.write_bytes(new)
+            (root/'intent.json').write_text(json.dumps({'generation':generation,'config_sha256':hashlib.sha256(new).hexdigest(),'previous_sha256':hashlib.sha256(old).hexdigest()}))
+            patches.enter_context(patch.object(apply_edge,'ROOT',root));patches.enter_context(patch.object(apply_edge,'CONFIG',config))
+            patches.enter_context(patch.object(apply_edge,'read',side_effect=lambda p:p.read_bytes()));patches.enter_context(patch.object(apply_edge,'atomic',side_effect=lambda p,b,mode=0o600:p.write_bytes(b)))
+            patches.enter_context(patch.object(apply_edge,'command',side_effect=command));patches.enter_context(patch.object(apply_edge,'live',side_effect=FileNotFoundError()));patches.enter_context(patch.object(apply_edge,'wait_live',side_effect=ValueError('unknown')))
+            with self.assertRaises(ValueError):apply_edge.install_generation(new,generation,[],{'adoption_sha256':hashlib.sha256(old).hexdigest()})
+            self.assertEqual(reloads,[])
+            self.assertTrue((root/'intent.json').exists())
+
+    def test_closed_generation_files_are_bounded(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(apply_edge,'ROOT',Path(tmp)):
+            for i in range(20):
+                generation=f'{i:08d}-1111-4111-8111-111111111111'
+                for kind in ['candidate','before']:(Path(tmp)/(kind+'-'+generation+'.cfg')).write_bytes(b'fixture')
+            apply_edge.prune_files('00000000-1111-4111-8111-111111111111')
+            self.assertTrue((Path(tmp)/'candidate-00000000-1111-4111-8111-111111111111.cfg').exists())
+            self.assertLessEqual(len(list(Path(tmp).glob('*.cfg'))),18)
+
+    def test_known_reload_rejection_restores_accepted_boot_file(self):
+        generation = '22222222-2222-4222-8222-222222222222'
+        previous = '11111111-1111-4111-8111-111111111111'
+        old = b'old-accepted-config'; new = b'new-candidate-config'
+        def command(args):
+            if args[:2] == ['systemctl', 'reload']: raise ValueError('haproxy-command-failed')
+            if 'Job' in args: return '0'
+            return 'active'
+        with tempfile.TemporaryDirectory() as tmp, contextlib.ExitStack() as patches:
+            root=Path(tmp); config=root/'haproxy.cfg'; config.write_bytes(old)
+            (root/('candidate-'+previous+'.cfg')).write_bytes(old)
+            (root/'receipt.json').write_text(json.dumps({'generation':previous,'config_sha256':hashlib.sha256(old).hexdigest(),'servers_state':'fixture'}))
+            patches.enter_context(patch.object(apply_edge,'ROOT',root));patches.enter_context(patch.object(apply_edge,'CONFIG',config))
+            patches.enter_context(patch.object(apply_edge,'read',side_effect=lambda p:p.read_bytes()))
+            patches.enter_context(patch.object(apply_edge,'atomic',side_effect=lambda p,b,mode=0o600:p.write_bytes(b)))
+            patches.enter_context(patch.object(apply_edge,'command',side_effect=command))
+            patches.enter_context(patch.object(apply_edge,'live',side_effect=lambda g,ips:'old-runtime' if g==previous else (_ for _ in ()).throw(FileNotFoundError())))
+            with self.assertRaises(ValueError):apply_edge.install_generation(new,generation,[],{'adoption_sha256':hashlib.sha256(old).hexdigest()})
+            self.assertEqual(config.read_bytes(),old)
+
+    def test_removal_does_not_depend_on_remaining_backend_ping(self):
+        c = {'generation': '11111111-1111-4111-8111-111111111111', 'targets': ['10.0.0.21']}
+        installed = []
+        with patch.object(apply_edge, 'probe', return_value=False), patch.object(apply_edge, 'candidate_content', return_value=b'fixture'), patch.object(apply_edge, 'subset_config', return_value=b'fixture', create=True), patch.object(apply_edge, 'install_generation', side_effect=lambda content, generation, ips, request: installed.append(ips), create=True):
+            apply_edge.apply_desired(c, ['10.0.0.20', '10.0.0.21'])
+        self.assertTrue(installed)
+        self.assertTrue(all('10.0.0.20' not in ips for ips in installed))
+
+    def test_withdrawal_precedes_failed_new_admission_on_a_lagged_edge(self):
+        c = {'generation': '11111111-1111-4111-8111-111111111111', 'targets': ['10.0.0.21', '10.0.0.22']}
+        installed = []
+        with patch.object(apply_edge, 'probe', return_value=False), patch.object(apply_edge, 'candidate_content', return_value=b'fixture'), patch.object(apply_edge, 'subset_config', return_value=b'fixture', create=True), patch.object(apply_edge, 'install_generation', side_effect=lambda content, generation, ips, request: installed.append(ips), create=True):
+            with self.assertRaises(ValueError): apply_edge.apply_desired(c, ['10.0.0.20', '10.0.0.21'])
+        self.assertEqual(installed, [['10.0.0.21']])
+
     def test_new_worker_preparation_resumes_after_guest_side_effect_without_adoption(self):
         c = {'node': {'project_id': 'project', 'provider_name': 'worker', 'attempt': 'attempt',
                       'node_uid': 'node', 'server_id': 'server', 'private_ip': '10.0.0.20'},
@@ -114,3 +173,27 @@ class HostContracts(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class OptimizedDiscovery(unittest.TestCase):
+    def test_foreign_marker_rejected_even_under_python_optimization(self):
+        import subprocess
+        import sys
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); marker = root/'marker.json'; marker.write_text(json.dumps({'project':'foreign','label':'controller','permanent':True}))
+            c={'identity_file':str(marker),'project_id':'project','manager_id':'manager','manifest':{'project_id':'project','manager_id':'manager','cluster_uid':'cluster','scope_hash':'scope','targets':[]}}
+            script=str(Path(__file__).with_name('publish_discovery.py'))
+            code="""import io,json,runpy,sys
+from pathlib import Path
+from types import SimpleNamespace
+scope=runpy.run_path(SCRIPT,run_name='fixture')['main'].__globals__
+real=Path;scope['Path']=lambda value:real(ROOT) if str(value)=='/var/lib/clo-ingress' else real(value)
+scope['os'].geteuid=lambda:0
+scope['read_regular']=lambda path:path.read_bytes()
+sys.stdin=SimpleNamespace(buffer=io.BytesIO(json.dumps(REQUEST).encode()))
+try:scope['main']()
+except ValueError:sys.exit(0)
+sys.exit(3)
+""".replace('SCRIPT',repr(script)).replace('ROOT',repr(str(root/'sink'))).replace('REQUEST',repr(c))
+            result=subprocess.run([sys.executable,'-O','-c',code],capture_output=True)
+            self.assertEqual(result.returncode,0,result.stderr.decode())
+            self.assertFalse((root/'sink'/'discovery.json').exists())

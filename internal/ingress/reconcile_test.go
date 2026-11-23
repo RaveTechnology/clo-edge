@@ -16,6 +16,10 @@ type fakeRuntime struct {
 	actions                                    []string
 	publications                               []Publication
 	failFirstPublish                           bool
+	prepareFn                                  func(Candidate) error
+	readyFn                                    func(Candidate) (bool, error)
+	publishFn                                  func(Publication) (PublishResult, error)
+	exports                                    []State
 }
 
 func (f *fakeRuntime) Discover(context.Context) (Snapshot, error) {
@@ -23,6 +27,9 @@ func (f *fakeRuntime) Discover(context.Context) (Snapshot, error) {
 }
 func (f *fakeRuntime) Prepare(_ context.Context, c Candidate) error {
 	f.actions = append(f.actions, "prepare:"+c.Name)
+	if f.prepareFn != nil {
+		return f.prepareFn(c)
+	}
 	return f.prepareError
 }
 func (f *fakeRuntime) SetReady(_ context.Context, c Candidate) error {
@@ -31,11 +38,17 @@ func (f *fakeRuntime) SetReady(_ context.Context, c Candidate) error {
 }
 func (f *fakeRuntime) BackendReady(_ context.Context, c Candidate) (bool, error) {
 	f.actions = append(f.actions, "probe:"+c.Name)
+	if f.readyFn != nil {
+		return f.readyFn(c)
+	}
 	return f.ready, nil
 }
 func (f *fakeRuntime) Publish(_ context.Context, p Publication) (PublishResult, error) {
 	f.actions = append(f.actions, "publish")
 	f.publications = append(f.publications, p)
+	if f.publishFn != nil {
+		return f.publishFn(p)
+	}
 	if f.failFirstPublish {
 		f.failFirstPublish = false
 		return PublishResult{}, errors.New("SSH reply lost")
@@ -44,6 +57,7 @@ func (f *fakeRuntime) Publish(_ context.Context, p Publication) (PublishResult, 
 }
 func (f *fakeRuntime) Export(_ context.Context, s State) error {
 	f.actions = append(f.actions, "export")
+	f.exports = append(f.exports, s)
 	return nil
 }
 func newEngine(t *testing.T) (*Engine, *fakeRuntime, *Store) {

@@ -85,6 +85,23 @@ func (k *Kubernetes) request(ctx context.Context, management bool, args []string
 	if len(raw) > 16<<20 || json.Unmarshal(raw, dst) != nil {
 		return errors.New("invalid bounded Kubernetes response")
 	}
+	if slices.Contains(args, "nodes") || slices.Contains(args, "machines.cluster.x-k8s.io") {
+		var list map[string]json.RawMessage
+		if json.Unmarshal(raw, &list) != nil || len(list["items"]) == 0 || list["items"][0] != '[' {
+			return errors.New("malformed Kubernetes LIST is not authoritative")
+		}
+		var entries []struct {
+			Metadata metadata `json:"metadata"`
+		}
+		if json.Unmarshal(list["items"], &entries) != nil {
+			return errors.New("invalid Kubernetes LIST items")
+		}
+		for _, item := range entries {
+			if !nameRE.MatchString(item.Metadata.Name) || !uuidRE.MatchString(item.Metadata.UID) {
+				return errors.New("Kubernetes LIST item lacks identity")
+			}
+		}
+	}
 	return nil
 }
 func ready(conditions []condition) bool {
@@ -154,6 +171,9 @@ func (k *Kubernetes) Discover(ctx context.Context) (Snapshot, error) {
 			}
 		}
 		m, ok := active[c.Name]
+		if ok {
+			c.MachineUID = m.Metadata.UID
+		}
 		if !ok || m.Status.NodeRef == nil {
 			c.Pending = true
 			out.Candidates = append(out.Candidates, c)

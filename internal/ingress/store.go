@@ -15,14 +15,16 @@ import (
 )
 
 type Publication struct {
-	Generation string     `json:"generation"`
-	Targets    []Identity `json:"targets"`
+	WithdrawOnly bool       `json:"withdraw_only,omitempty"`
+	Generation   string     `json:"generation"`
+	Targets      []Identity `json:"targets"`
 }
 type PublishResult struct {
 	AppliedEdges []string `json:"applied_edges"`
 	PendingEdges []string `json:"pending_edges,omitempty"`
 }
 type State struct {
+	CandidateCursor    int           `json:"candidate_cursor,omitempty"`
 	Version            int           `json:"version"`
 	MachineID          string        `json:"machine_id"`
 	ScopeHash          string        `json:"scope_hash"`

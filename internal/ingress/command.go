@@ -15,15 +15,17 @@ type Runner interface {
 }
 type ExecRunner struct{}
 type boundedOutput struct {
-	bytes.Buffer
-	limit int
+	buffer bytes.Buffer
+	limit  int
 }
 
+func (b *boundedOutput) Bytes() []byte { return b.buffer.Bytes() }
+
 func (b *boundedOutput) Write(p []byte) (int, error) {
-	if len(p) > b.limit-b.Len() {
+	if len(p) > b.limit-b.buffer.Len() {
 		return 0, errors.New("command output bound exceeded")
 	}
-	return b.Buffer.Write(p)
+	return b.buffer.Write(p)
 }
 func (ExecRunner) Run(ctx context.Context, program string, args []string, input []byte) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(ctx, 45*time.Second)

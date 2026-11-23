@@ -22,6 +22,7 @@ type LiveRuntime struct {
 	Kube        Kubernetes
 	Cloud       InventoryReader
 	Runner      Runner
+	snapshot    Snapshot
 	inventory   Inventory
 	candidates  map[string]Candidate
 	edgeRunning map[string]bool
@@ -134,6 +135,7 @@ func (r *LiveRuntime) Discover(ctx context.Context) (Snapshot, error) {
 	}
 	r.inventory = normalizeInventory(cloud)
 	snapshot.Inventory = r.inventory
+	r.snapshot = snapshot
 	if err = r.validateHosts(cloud); err != nil {
 		return snapshot, err
 	}
@@ -160,9 +162,11 @@ func (r *LiveRuntime) Prepare(ctx context.Context, c Candidate) error {
 		return err
 	}
 	key := filepath.Join(directory, c.ServerID+".key")
-	if err := writePrivate(key, c.PrivateKey); err != nil {
+	sshKey, cleanup, err := stageWorkerKey(key, c.PrivateKey)
+	if err != nil {
 		return err
 	}
+	defer cleanup()
 	request := map[string]any{"node": c.Identity, "manager_id": r.Config.ManagementServerID, "scope_hash": r.Config.ScopeHash(), "edge_ips": []string{r.Config.Edge.Edges[0].PrivateIP, r.Config.Edge.Edges[1].PrivateIP}, "observer_ip": r.Config.ObserverIP, "adopt_existing": slices.Contains(r.Config.AdoptNodeUIDs, c.NodeUID)}
 	var result struct {
 		OK         bool   `json:"ok"`
@@ -170,26 +174,70 @@ func (r *LiveRuntime) Prepare(ctx context.Context, c Candidate) error {
 		ServerID   string `json:"server_id"`
 		Persistent bool   `json:"persistent_guard"`
 	}
-	if err := r.remote(ctx, c.ServerID, c.PrivateIP, key, true, prepareNodeScript, request, &result); err != nil {
+	if err := r.remote(ctx, c.ServerID, c.PrivateIP, sshKey, true, prepareNodeScript, request, &result); err != nil {
 		return fmt.Errorf("preparing verified ingress worker failed: %w", err)
 	}
 	if !result.OK || result.NodeUID != c.NodeUID || result.ServerID != c.ServerID || !result.Persistent {
 		return errors.New("guest did not confirm identity-bound persistent guard")
 	}
-	return nil
+	return writePrivate(key, c.PrivateKey)
 }
 func (r *LiveRuntime) SetReady(ctx context.Context, c Candidate) error {
 	return r.Kube.SetReady(ctx, c)
 }
 func (r *LiveRuntime) BackendReady(ctx context.Context, c Candidate) (bool, error) {
-	return r.Kube.BackendReady(ctx, c)
+	ok, err := r.Kube.BackendReady(ctx, c)
+	if err != nil || !ok {
+		return ok, err
+	}
+	return r.probeBackend(ctx, c)
+}
+
+func (r *LiveRuntime) probeBackend(ctx context.Context, c Candidate) (bool, error) {
+	failures := []error{}
+	observed := false
+	for _, host := range r.Config.Edge.Edges {
+		if !r.edgeRunning[host.ID] {
+			continue
+		}
+		request := map[string]any{"project_id": r.Config.Edge.ProjectID, "edge_id": host.ID, "identity_file": r.Config.PlatformIdentityFile, "identity_label": r.Config.EdgeIdentityLabels[host.ID], "targets": []string{c.PrivateIP}, "probe_only": true}
+		var response struct {
+			OK        bool   `json:"ok"`
+			EdgeID    string `json:"edge_id"`
+			Reachable bool   `json:"reachable"`
+		}
+		edgeContext, stop := context.WithTimeout(ctx, 4*time.Second)
+		err := r.remote(edgeContext, host.ID, host.PrivateIP, r.Config.EdgeSSHKey, false, applyEdgeScript, request, &response)
+		stop()
+		if err != nil || !response.OK || response.EdgeID != host.ID {
+			failures = append(failures, errors.New("private edge admission observation unavailable"))
+			continue
+		}
+		observed = true
+		if response.Reachable {
+			return true, nil
+		}
+	}
+	if len(failures) > 0 {
+		return false, errors.Join(failures...)
+	}
+	if !observed {
+		return false, errors.New("no running edge available for admission")
+	}
+	return false, nil
 }
 func (r *LiveRuntime) Publish(ctx context.Context, p Publication) (PublishResult, error) {
 	result := PublishResult{}
+	failures := []error{}
 	ips := []string{}
 	for _, target := range p.Targets {
 		candidate, ok := r.candidates[target.NodeUID]
 		if !ok || !candidate.Identity.Equal(target) {
+			_, preserve := retainedUnknown(r.Config, r.snapshot, target)
+			if preserve {
+				ips = append(ips, target.PrivateIP)
+				continue
+			}
 			return result, errors.New("publication identity absent from current verified candidates")
 		}
 		ips = append(ips, target.PrivateIP)
@@ -204,7 +252,7 @@ func (r *LiveRuntime) Publish(ctx context.Context, p Publication) (PublishResult
 			return result, err
 		}
 		sum := sha256.Sum256([]byte(config))
-		request := map[string]any{"project_id": r.Config.Edge.ProjectID, "manager_id": r.Config.ManagementServerID, "scope_hash": r.Config.ScopeHash(), "edge_id": host.ID, "identity_file": r.Config.PlatformIdentityFile, "identity_label": r.Config.EdgeIdentityLabels[host.ID], "generation": p.Generation, "targets": ips, "config": config, "config_sha256": hex.EncodeToString(sum[:]), "adoption_sha256": r.Config.AdoptionSHA256[host.ID]}
+		request := map[string]any{"project_id": r.Config.Edge.ProjectID, "manager_id": r.Config.ManagementServerID, "scope_hash": r.Config.ScopeHash(), "edge_id": host.ID, "identity_file": r.Config.PlatformIdentityFile, "identity_label": r.Config.EdgeIdentityLabels[host.ID], "generation": p.Generation, "targets": ips, "config": config, "config_sha256": hex.EncodeToString(sum[:]), "adoption_sha256": r.Config.AdoptionSHA256[host.ID], "withdraw_only": p.WithdrawOnly}
 		var response struct {
 			OK           bool   `json:"ok"`
 			EdgeID       string `json:"edge_id"`
@@ -213,18 +261,24 @@ func (r *LiveRuntime) Publish(ctx context.Context, p Publication) (PublishResult
 			ServersState string `json:"servers_state"`
 		}
 		if err = r.remote(ctx, host.ID, host.PrivateIP, r.Config.EdgeSSHKey, false, applyEdgeScript, request, &response); err != nil {
-			return result, fmt.Errorf("publishing ingress generation failed: %w", err)
+			result.PendingEdges = append(result.PendingEdges, host.ID)
+			failures = append(failures, fmt.Errorf("publishing ingress generation failed: %w", err))
+			continue
 		}
 		if !response.OK || response.EdgeID != host.ID || response.Generation != p.Generation || response.ConfigSHA256 != hex.EncodeToString(sum[:]) {
-			return result, errors.New("edge generation acknowledgement mismatch")
+			result.PendingEdges = append(result.PendingEdges, host.ID)
+			failures = append(failures, errors.New("edge generation acknowledgement mismatch"))
+			continue
 		}
 		if err = VerifyServersState(response.ServersState, ips); err != nil {
-			return result, err
+			result.PendingEdges = append(result.PendingEdges, host.ID)
+			failures = append(failures, err)
+			continue
 		}
 		result.AppliedEdges = append(result.AppliedEdges, host.ID)
 	}
 	if len(result.AppliedEdges) == 0 {
-		return result, errors.New("no configured running edge available")
+		return result, errors.Join(append(failures, errors.New("no configured running edge available"))...)
 	}
 	return result, nil
 }
