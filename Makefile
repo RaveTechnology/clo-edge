@@ -19,7 +19,7 @@ haproxy-check: build
 	CLO_INGRESS_HAPROXY_TEST=1 go test ./internal/ingress -run TestNativeHAProxyGenerationRuntimeAndGracefulReload -count=1
 package: build
 	mkdir -p dist
-	tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner -cf dist/clo-edge-linux-amd64.tar -C bin clo-edge clo-ingress -C .. LICENSE NOTICE THIRD_PARTY_NOTICES.txt deploy docs/controller-operations.md docs/ingress-operations.md
+	tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner --exclude='__pycache__' --exclude='*.pyc' -cf dist/clo-edge-linux-amd64.tar -C bin clo-edge clo-ingress -C .. LICENSE NOTICE THIRD_PARTY_NOTICES.txt deploy docs/controller-operations.md docs/ingress-operations.md
 	gzip -n -f dist/clo-edge-linux-amd64.tar
 	cp LICENSE NOTICE THIRD_PARTY_NOTICES.txt dist/
 	cd dist && sha256sum clo-edge-linux-amd64.tar.gz LICENSE NOTICE THIRD_PARTY_NOTICES.txt > SHA256SUMS
