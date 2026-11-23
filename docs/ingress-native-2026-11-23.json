@@ -3,7 +3,7 @@
   "recorded_at_utc": "2026-11-23T12:57:58.789195+00:00",
   "component": "native Rancher ingress reconciliation",
   "version": "0.2.0-rc.1",
-  "native_binary_sha256": "90eaba29200137f4223caacfc2a8a5b87f4f90a6e3b1340f54e44aa01f00e9ce",
+  "native_binary_sha256": "a3ac4408147aafff00d1297da1f57293db2ef6163a0a6591555a06017cc4594b",
   "observe_only_verified_candidates": 3,
   "permanent_manager_vm_added": false,
   "automatic": true,
