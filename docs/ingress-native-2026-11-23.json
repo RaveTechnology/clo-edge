@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-11-23T12:57:58.789195+00:00",
+  "component": "native Rancher ingress reconciliation",
+  "version": "0.2.0-rc.1",
+  "native_binary_sha256": "1a00fa776659c1fca804d71cb87b3ff572c21be1a8848aefa066c80ea4f9c9e8",
+  "observe_only_verified_candidates": 3,
+  "permanent_manager_vm_added": false,
+  "automatic": true,
+  "default_maximum_backends": 2,
+  "baseline_and_final": {
+    "ready_nodes": 9,
+    "servers": 13,
+    "volumes": 13,
+    "addresses": 19,
+    "exact_original_resource_ids_preserved": true
+  },
+  "owned_worker_replacement": {
+    "incarnations": 2,
+    "vm_id_changed": true,
+    "node_uid_changed": true,
+    "private_ipv4_changed": true,
+    "released_address_held_by_owned_helper": true,
+    "obsolete_backend_withdrawn_before_address_reuse": true,
+    "manual_guest_guard_or_node_label_or_backend_edit": false,
+    "live_generation_verified_on_edges": 2,
+    "temporary_kubernetes_and_cloud_resources_removed": true
+  },
+  "guest_acceptance": {
+    "edge_private_port_connections_allowed_per_incarnation": 6,
+    "management_private_port_connections_rejected_per_incarnation": 3,
+    "test_nodes_had_system_pods_only": true,
+    "test_nodes_had_no_pvc": true,
+    "original_two_user_worker_agent_pids_preserved": true
+  },
+  "https_observations": {
+    "workstation": {
+      "count": 789,
+      "failures": 134,
+      "observed_failure_class": "connect timeout; no HTTP response"
+    },
+    "independent_frequent_probe": {
+      "count": 932,
+      "failures": 0,
+      "first": 1795436752.6926503,
+      "last": 1795438677.2115667
+    },
+    "final_independent_verified_tls_checks": 3,
+    "uninterrupted_access_from_every_client_claimed": false
+  },
+  "monitoring": {
+    "dynamic_target_validation": true,
+    "static_legacy_mode_compatible": true,
+    "loaded_rules": 32,
+    "added_discovery_rules": 2,
+    "new_rules_healthy_and_inactive": true
+  },
+  "unchanged_or_outstanding": {
+    "legacy_vip_controller_config_and_journal_unchanged": true,
+    "vip_automatic_failover_restored": false,
+    "csi_recommissioning_complete": false,
+    "customer_data_or_telephony_migrated": false
+  }
+}
