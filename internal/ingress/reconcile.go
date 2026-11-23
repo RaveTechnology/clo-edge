@@ -106,8 +106,11 @@ func (e *Engine) Tick(ctx context.Context, now time.Time) (returned error) {
 	survivors := Survivors(st.Targets, retained)
 	pendingInvalid := st.Pending != nil && len(Survivors(st.Pending.Targets, retained)) != len(st.Pending.Targets)
 	if len(survivors) != len(st.Targets) || pendingInvalid {
-		if err := publish(survivors, true); err != nil {
-			return err
+		resuming := st.Pending != nil && st.Pending.WithdrawOnly && reflect.DeepEqual(st.Pending.Targets, survivors) && !pendingInvalid && !unknown
+		if !resuming {
+			if err := publish(survivors, true); err != nil {
+				return err
+			}
 		}
 	} else if st.Generation != "" && st.Pending == nil {
 		if err := publish(st.Targets, true); err != nil {

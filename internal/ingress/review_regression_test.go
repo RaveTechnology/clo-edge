@@ -211,3 +211,28 @@ func TestPrivateAdmissionUsesReachableEdgesAndReportsFailedPing(t *testing.T) {
 		t.Fatal("private paths were not checked")
 	}
 }
+
+func TestPendingWithdrawalCanResumeAdmissionAfterBothLaggedEdgesPrune(t *testing.T) {
+	e, r, store := newEngine(t)
+	addReserve(&r.snapshot)
+	if err := e.Tick(context.Background(), time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	r.snapshot.Candidates = r.snapshot.Candidates[1:]
+	r.publishFn = func(p Publication) (PublishResult, error) {
+		if p.WithdrawOnly {
+			return PublishResult{PendingEdges: []string{"a", "b"}}, errors.New("safe subsets applied; new admission pending")
+		}
+		return PublishResult{AppliedEdges: []string{"a", "b"}}, nil
+	}
+	if e.Tick(context.Background(), time.Now()) == nil {
+		t.Fatal("ambiguous subset was called complete")
+	}
+	if err := e.Tick(context.Background(), time.Now()); err != nil {
+		t.Fatalf("pending withdrawal never reached fresh admission: %v", err)
+	}
+	s, _ := store.Load()
+	if len(s.Targets) != 1 || s.Targets[0].Name != "worker-b" {
+		t.Fatal("surviving worker not restored")
+	}
+}
