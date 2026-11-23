@@ -3,7 +3,7 @@
   "recorded_at_utc": "2026-11-23T12:57:58.789195+00:00",
   "component": "native Rancher ingress reconciliation",
   "version": "0.2.0-rc.1",
-  "native_binary_sha256": "1a00fa776659c1fca804d71cb87b3ff572c21be1a8848aefa066c80ea4f9c9e8",
+  "native_binary_sha256": "90eaba29200137f4223caacfc2a8a5b87f4f90a6e3b1340f54e44aa01f00e9ce",
   "observe_only_verified_candidates": 3,
   "permanent_manager_vm_added": false,
   "automatic": true,
@@ -60,5 +60,23 @@
     "vip_automatic_failover_restored": false,
     "csi_recommissioning_complete": false,
     "customer_data_or_telephony_migrated": false
+  },
+  "replacement_experiment_binary_sha256": "1a00fa776659c1fca804d71cb87b3ff572c21be1a8848aefa066c80ea4f9c9e8",
+  "post_review": {
+    "one_independent_review": true,
+    "critical_findings_fixed": 2,
+    "important_findings_fixed": 9,
+    "second_review": false,
+    "fixes_verified_by_failing_then_passing_regressions": true,
+    "go_race_packages_passed": 5,
+    "host_script_tests_passed": 14,
+    "discovery_tests_passed": 2,
+    "real_haproxy_subset_parser_and_runtime_reload_passed": true,
+    "live_backend_reduction_and_restoration": [
+      2,
+      1,
+      2
+    ],
+    "original_resources_preserved": true
   }
 }

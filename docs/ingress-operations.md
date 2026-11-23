@@ -125,3 +125,21 @@ also be recovered from current Rancher archives. This does not add controller-ho
 HA or automated takeover. Changes to pinned host/cluster/DaemonSet identities need
 an explicit scope migration rather than deleting a journal to suppress an error.
 CSI enrollment, its boot-serial registry, volume fencing and telephony remain separate.
+
+## Failure reconciliation
+
+Each reachable edge is reconciled independently. Obsolete addresses are withdrawn
+before health admission of newly added addresses; a failed remaining `/ping`
+cannot preserve a removed endpoint. A lagging edge can first receive a safe subset
+and retain pending admission for the complete desired generation.
+
+Every cycle proves the loaded generation. An unchanged target set reuses the same
+generation, including when one edge is stopped. Closed candidate/backup files are
+bounded to eight generations plus the current generation. A proven rejected
+reload restores the last accepted boot configuration; an uncertain result retains
+its intent and is not blindly replayed.
+
+A missing archive preserves only a previously accepted Node/Machine/native binding
+whose complete CLO ownership still matches. It permits no new adoption. A confirmed
+Node loss or IP reassignment still withdraws the obsolete target. Healthy reserves
+are considered after failed preparation or admission, with a bounded shared budget.

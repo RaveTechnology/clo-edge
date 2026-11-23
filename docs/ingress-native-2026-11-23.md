@@ -37,3 +37,14 @@ ingress replacement automation. Full application platform acceptance remains ope
 Machine-specific evidence, credentials and addresses remain private. Reproducible
 commands and authority requirements are in [ingress operations](ingress-operations.md).
 The [JSON record](ingress-native-2026-11-23.json) contains bounded, non-secret evidence.
+
+A single independent review identified two critical and nine important failure
+cases. All were fixed with failing-then-passing regressions and a green full suite.
+The replacement experiment's binary hash is retained separately from the corrected
+installed artifact. The corrected build also passed live reduction from two
+backends to one and restoration to two, running-generation verification on both
+edges, private health checks and independent TLS verification. No new VM or user
+Node replacement was needed for this additional check.
+
+Deferred minor findings: `/readyz` can return 503 during a normal preparation stage;
+retired confirmed worker SSH-key copies remain privately cached until operator cleanup.
