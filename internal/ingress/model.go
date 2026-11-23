@@ -24,6 +24,7 @@ func (a Identity) Equal(b Identity) bool { return reflect.DeepEqual(a, b) }
 
 type Candidate struct {
 	Identity
+	NodeRefName  string `json:"node_ref_name"`
 	NodeRefUID   string `json:"node_ref_uid"`
 	Ready        bool   `json:"ready"`
 	Schedulable  bool   `json:"schedulable"`
@@ -90,7 +91,7 @@ func verifyCandidate(cfg Config, c Candidate, inv Inventory) error {
 			return reject
 		}
 	}
-	if !nameRE.MatchString(c.Name) || c.NodeUID != c.NodeRefUID || c.ProjectID != cfg.Edge.ProjectID || c.Attempt == "" || strings.ContainsAny(c.Attempt+c.ProviderName, "\r\n\x00") {
+	if !nameRE.MatchString(c.Name) || c.NodeRefName != c.Name || (c.NodeRefUID != "" && c.NodeUID != c.NodeRefUID) || c.ProjectID != cfg.Edge.ProjectID || c.Attempt == "" || strings.ContainsAny(c.Attempt+c.ProviderName, "\r\n\x00") {
 		return reject
 	}
 	prefix, err := netip.ParsePrefix(cfg.PrivateCIDR)

@@ -27,6 +27,7 @@ type State struct {
 	MachineID          string        `json:"machine_id"`
 	ScopeHash          string        `json:"scope_hash"`
 	Phase              string        `json:"phase"`
+	Generation         string        `json:"generation"`
 	Targets            []Identity    `json:"targets"`
 	Pending            *Publication  `json:"pending,omitempty"`
 	Preparing          *Identity     `json:"preparing,omitempty"`

@@ -72,6 +72,7 @@ func (e *Engine) Tick(ctx context.Context, now time.Time) (returned error) {
 			return errors.New("no owned edge accepted publication")
 		}
 		st.Targets = append([]Identity{}, targets...)
+		st.Generation = st.Pending.Generation
 		st.PublicationResult = result
 		st.Pending = nil
 		return e.Store.Save(st)

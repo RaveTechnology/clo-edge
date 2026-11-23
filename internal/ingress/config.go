@@ -32,6 +32,12 @@ type Config struct {
 	Kubectl                string            `json:"kubectl,omitempty"`
 	SSH                    string            `json:"ssh,omitempty"`
 	AdoptionSHA256         map[string]string `json:"adoption_sha256,omitempty"`
+	TraefikUID             string            `json:"traefik_uid,omitempty"`
+	TraefikNamespace       string            `json:"traefik_namespace,omitempty"`
+	ExpectedMachineID      string            `json:"expected_machine_id,omitempty"`
+	AdoptNodeUIDs          []string          `json:"adopt_node_uids,omitempty"`
+	EdgeIdentityLabels     map[string]string `json:"edge_identity_labels,omitempty"`
+	PlatformIdentityFile   string            `json:"platform_identity_file,omitempty"`
 }
 
 var uuidRE = regexp.MustCompile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$`)
@@ -75,7 +81,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 func (c Config) ScopeHash() string {
-	raw, _ := json.Marshal([]string{c.Edge.Hash(), c.ManagementServerID, c.ProvisioningClusterUID, c.DownstreamSystemUID, c.ClusterName, c.Namespace, c.PrivateCIDR, c.ObserverIP})
+	raw, _ := json.Marshal([]string{c.Edge.Hash(), c.ManagementServerID, c.ProvisioningClusterUID, c.DownstreamSystemUID, c.ClusterName, c.Namespace, c.PrivateCIDR, c.ObserverIP, c.TraefikUID, c.TraefikNamespace, c.ExpectedMachineID})
 	sum := sha256.Sum256(raw)
 	return hex.EncodeToString(sum[:])
 }

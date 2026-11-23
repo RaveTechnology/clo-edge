@@ -109,6 +109,9 @@ func TestLostPublicationResponseResumesSameDurableGeneration(t *testing.T) {
 	if st.Pending != nil || len(st.Targets) != 1 {
 		t.Fatal("publication not accepted")
 	}
+	if st.Generation != gen {
+		t.Fatal("accepted live generation not retained for monitoring")
+	}
 }
 func TestRemovedUIDWithdrawnBeforeReplacementLabel(t *testing.T) {
 	e, r, _ := newEngine(t)
