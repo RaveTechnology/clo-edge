@@ -210,7 +210,17 @@ func (k *Kubernetes) node(ctx context.Context, c Candidate) (kubeNode, error) {
 	if err != nil {
 		return node, err
 	}
-	if node.Metadata.Name != c.Name || node.Metadata.UID != c.NodeUID || node.Metadata.DeletionTimestamp != nil || !ready(node.Status.Conditions) || node.Metadata.Labels["workload"] != "general" {
+	_, controlPlane := node.Metadata.Labels["node-role.kubernetes.io/control-plane"]
+	addresses := 0
+	for _, address := range node.Status.Addresses {
+		if address.Type == "InternalIP" {
+			addresses++
+			if address.Address != c.PrivateIP {
+				return node, errors.New("selected Node private address changed")
+			}
+		}
+	}
+	if node.Metadata.Name != c.Name || node.Metadata.UID != c.NodeUID || node.Metadata.DeletionTimestamp != nil || !ready(node.Status.Conditions) || node.Metadata.Labels["workload"] != "general" || node.Spec.Unschedulable || len(node.Spec.Taints) != 0 || controlPlane || addresses != 1 || node.Metadata.Labels["kubernetes.io/os"] != "linux" || node.Metadata.Labels["kubernetes.io/arch"] != "amd64" {
 		return node, errors.New("selected Node incarnation is no longer ready/owned")
 	}
 	return node, nil

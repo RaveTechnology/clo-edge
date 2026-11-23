@@ -100,3 +100,28 @@ func TestEmptySourceResponseIsNotAnAuthoritativeEmptyInventory(t *testing.T) {
 		t.Fatal("empty transport result interpreted as complete empty source")
 	}
 }
+
+func TestFreshNodeChangesBlockReadinessMutation(t *testing.T) {
+	cfg, s := fixture(t)
+	for name, raw := range map[string]string{
+		"tainted":            strings.Replace(nodeFixture, `"spec":{}`, `"spec":{"taints":[{"key":"dedicated","value":"voip","effect":"NoSchedule"}]}`, 1),
+		"cordoned":           strings.Replace(nodeFixture, `"spec":{}`, `"spec":{"unschedulable":true}`, 1),
+		"control-plane":      strings.Replace(nodeFixture, `"workload":"general"`, `"workload":"general","node-role.kubernetes.io/control-plane":"true"`, 1),
+		"changed-IP":         strings.ReplaceAll(nodeFixture, "10.0.0.20", "10.0.0.99"),
+		"wrong-OS":           strings.ReplaceAll(nodeFixture, `"linux"`, `"windows"`),
+		"wrong-architecture": strings.ReplaceAll(nodeFixture, `"amd64"`, `"arm64"`),
+	} {
+		t.Run(name, func(t *testing.T) {
+			mutations := 0
+			k := Kubernetes{Config: cfg, Runner: runFunc(func(_ context.Context, _ string, args []string, _ []byte) ([]byte, error) {
+				if slices.Contains(args, "patch") {
+					mutations++
+				}
+				return []byte(raw), nil
+			})}
+			if k.SetReady(context.Background(), s.Candidates[0]) == nil || mutations != 0 {
+				t.Fatal("changed worker was labeled after discovery")
+			}
+		})
+	}
+}
