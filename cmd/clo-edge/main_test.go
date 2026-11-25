@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -104,5 +106,215 @@ func TestCLIRefusesNonLoopbackMetrics(t *testing.T) {
 	args = append(args, "--listen", "0.0.0.0:9128")
 	if execute(context.Background(), append([]string{"run"}, args...), &bytes.Buffer{}, func(string) (edge.Provider, error) { return f, nil }, cliProbe{}) == nil {
 		t.Fatal("metrics exposed publicly")
+	}
+}
+
+func TestCLICompleteAcceptedAttachDryRunAndDurableReceipt(t *testing.T) {
+	args, f := cliFixture(t)
+	factory := func(string) (edge.Provider, error) { return f, nil }
+	var out bytes.Buffer
+	if err := execute(context.Background(), append([]string{"init"}, args...), &out, factory, cliProbe{}); err != nil {
+		t.Fatal(err)
+	}
+	machine, _ := os.ReadFile("/etc/machine-id")
+	store, err := edge.OpenStore(args[3], strings.TrimSpace(string(machine)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, _ := store.Load()
+	now := time.Now()
+	s.Phase = edge.RecoveryRequired
+	s.SourceID = s.ActiveID
+	for id := range f.v.Servers {
+		if id != s.SourceID && id != f.v.Address.ID && id != "33333333-3333-4333-8333-333333333333" {
+			s.TargetID = id
+		}
+	}
+	s.Pending = &edge.Pending{Kind: "attach", Accepted: true, DispatchedAt: now.Add(-time.Minute)}
+	s.PhaseSince = now.Add(-time.Minute)
+	if err = store.Save(s); err != nil {
+		t.Fatal(err)
+	}
+	store.Close()
+	v := f.v.Servers[s.SourceID]
+	v.Status = "STOPPED"
+	v.SwitchStatus = "OFF"
+	f.v.Servers[s.SourceID] = v
+	f.v.Address.Owner = s.TargetID
+	journal := filepath.Join(args[3], "state.json")
+	before, _ := os.ReadFile(journal)
+	out.Reset()
+	if err = execute(context.Background(), append(append([]string{"complete-accepted-attach"}, args...), "--dry-run"), &out, factory, cliRecoveryProbe{source: s.SourceID}); err != nil {
+		t.Fatal(err)
+	}
+	after, _ := os.ReadFile(journal)
+	if !bytes.Equal(before, after) {
+		t.Fatal("dry run changed journal bytes")
+	}
+	var receipt struct {
+		Before edge.State `json:"before"`
+		After  edge.State `json:"after"`
+		DryRun bool       `json:"dry_run"`
+	}
+	if json.Unmarshal(out.Bytes(), &receipt) != nil || !receipt.DryRun || receipt.Before.Pending == nil || receipt.After.Phase != edge.Completed {
+		t.Fatal("dry run receipt is incomplete")
+	}
+	out.Reset()
+	if err = execute(context.Background(), append([]string{"complete-accepted-attach"}, args...), &out, factory, cliRecoveryProbe{source: s.SourceID}); err != nil {
+		t.Fatal(err)
+	}
+	if json.Unmarshal(out.Bytes(), &receipt) != nil || receipt.DryRun || receipt.After.Armed || receipt.After.ActiveID != s.TargetID {
+		t.Fatal("completion receipt is incomplete")
+	}
+	got, err := edge.Inspect(args[3])
+	if err != nil || got.Phase != edge.Completed || got.Pending != nil || f.writes != 0 {
+		t.Fatal("CLI did not persist a read-only-cloud completion")
+	}
+}
+func TestCLIDryRunFlagDoesNotSilentlyArm(t *testing.T) {
+	args, f := cliFixture(t)
+	if execute(context.Background(), append(append([]string{"arm"}, args...), "--dry-run"), &bytes.Buffer{}, func(string) (edge.Provider, error) { return f, nil }, cliProbe{}) == nil {
+		t.Fatal("unsupported dry-run flag accepted")
+	}
+	if f.writes != 0 {
+		t.Fatal("invalid invocation wrote cloud")
+	}
+}
+
+type cliRecoveryProbe struct{ source string }
+
+func (p cliRecoveryProbe) Observe(ctx context.Context, c edge.Config) edge.Observation {
+	o := (cliProbe{}).Observe(ctx, c)
+	o.Private[p.source] = false
+	o.PrivateUnreachable = map[string]bool{p.source: true}
+	return o
+}
+
+func TestCLILegacyVerificationJournalNeverAuthorizesRecovery(t *testing.T) {
+	args, f := cliFixture(t)
+	factory := func(string) (edge.Provider, error) { return f, nil }
+	var out bytes.Buffer
+	if err := execute(context.Background(), append([]string{"init"}, args...), &out, factory, cliProbe{}); err != nil {
+		t.Fatal(err)
+	}
+	machine, _ := os.ReadFile("/etc/machine-id")
+	store, err := edge.OpenStore(args[3], strings.TrimSpace(string(machine)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, _ := store.Load()
+	s.Phase = edge.RecoveryRequired
+	s.SourceID = s.ActiveID
+	s.TargetID = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+	s.PhaseSince = time.Now().Add(-5 * time.Minute)
+	s.Reason = "native convergence deadline exceeded; settle pending job manually"
+	if err = store.Save(s); err != nil {
+		t.Fatal(err)
+	}
+	store.Close()
+	v := f.v.Servers[s.SourceID]
+	v.Status = "STOPPED"
+	v.SwitchStatus = "OFF"
+	f.v.Servers[s.SourceID] = v
+	f.v.Address.Owner = s.TargetID
+	var data []byte
+	for _, p := range []edge.Phase{edge.Verifying, edge.RecoveryRequired} {
+		at := s.PhaseSince.Add(time.Millisecond)
+		if p == edge.RecoveryRequired {
+			at = at.Add(4 * time.Minute)
+		}
+		message, _ := json.Marshal(map[string]any{"phase": p, "reason": func() string {
+			if p == edge.RecoveryRequired {
+				return s.Reason
+			}
+			return ""
+		}()})
+		row, _ := json.Marshal(map[string]string{"_MACHINE_ID": s.MachineID, "_SYSTEMD_UNIT": "clo-edge.service", "_SYSTEMD_INVOCATION_ID": "unit", "__REALTIME_TIMESTAMP": strconv.FormatInt(at.UnixMicro(), 10), "MESSAGE": string(message)})
+		data = append(data, row...)
+		data = append(data, '\n')
+	}
+	proof := filepath.Join(filepath.Dir(args[3]), "verification.jsonl")
+	if err = os.WriteFile(proof, data, 0644); err != nil {
+		t.Fatal(err)
+	}
+	call := append(append([]string{"complete-verification-timeout"}, args...), "--verification-journal", proof, "--dry-run")
+	if execute(context.Background(), call, &out, factory, cliRecoveryProbe{source: s.SourceID}) == nil {
+		t.Fatal("public-readable proof accepted")
+	}
+	os.Chmod(proof, 0600)
+	before, _ := os.ReadFile(filepath.Join(args[3], "state.json"))
+	out.Reset()
+	if err = execute(context.Background(), call, &out, factory, cliRecoveryProbe{source: s.SourceID}); err == nil {
+		t.Fatal("legacy unbound journal authorized recovery")
+	}
+	after, _ := os.ReadFile(filepath.Join(args[3], "state.json"))
+	if !bytes.Equal(before, after) || f.writes != 0 {
+		t.Fatal("dry verification recovery mutated state/cloud")
+	}
+}
+
+func TestCLIResumeAcceptedDetachDryRunAndDurableReceipt(t *testing.T) {
+	args, f := cliFixture(t)
+	factory := func(string) (edge.Provider, error) { return f, nil }
+	var out bytes.Buffer
+	if err := execute(context.Background(), append([]string{"init"}, args...), &out, factory, cliProbe{}); err != nil {
+		t.Fatal(err)
+	}
+	machine, _ := os.ReadFile("/etc/machine-id")
+	store, err := edge.OpenStore(args[3], strings.TrimSpace(string(machine)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, _ := store.Load()
+	now := time.Now()
+	s.Phase = edge.RecoveryRequired
+	s.SourceID = s.ActiveID
+	for id := range f.v.Servers {
+		if id != s.SourceID && id != f.v.Address.ID && id != "33333333-3333-4333-8333-333333333333" {
+			s.TargetID = id
+		}
+	}
+	s.Pending = &edge.Pending{Kind: "detach", Accepted: true, DispatchedAt: now.Add(-time.Minute)}
+	s.PhaseSince = now.Add(-time.Minute)
+	if err = store.Save(s); err != nil {
+		t.Fatal(err)
+	}
+	store.Close()
+	v := f.v.Servers[s.SourceID]
+	v.Status = "STOPPED"
+	v.SwitchStatus = "OFF"
+	f.v.Servers[s.SourceID] = v
+	f.v.Address.Owner = ""
+	f.v.Address.Entity = ""
+	f.v.Address.Type = "FREE"
+	f.v.Address.Status = "DOWN"
+	journal := filepath.Join(args[3], "state.json")
+	before, _ := os.ReadFile(journal)
+	out.Reset()
+	if err = execute(context.Background(), append(append([]string{"resume-accepted-detach"}, args...), "--dry-run"), &out, factory, cliRecoveryProbe{source: s.SourceID}); err != nil {
+		t.Fatal(err)
+	}
+	after, _ := os.ReadFile(journal)
+	if !bytes.Equal(before, after) {
+		t.Fatal("dry run changed journal bytes")
+	}
+	var receipt struct {
+		Before edge.State `json:"before"`
+		After  edge.State `json:"after"`
+		DryRun bool       `json:"dry_run"`
+	}
+	if json.Unmarshal(out.Bytes(), &receipt) != nil || !receipt.DryRun || receipt.Before.Pending == nil || receipt.After.Phase != edge.Attaching {
+		t.Fatal("dry run receipt is incomplete")
+	}
+	out.Reset()
+	if err = execute(context.Background(), append([]string{"resume-accepted-detach"}, args...), &out, factory, cliRecoveryProbe{source: s.SourceID}); err != nil {
+		t.Fatal(err)
+	}
+	if json.Unmarshal(out.Bytes(), &receipt) != nil || receipt.DryRun || !receipt.After.Armed || receipt.After.ActiveID != s.SourceID {
+		t.Fatal("completion receipt is incomplete")
+	}
+	got, err := edge.Inspect(args[3])
+	if err != nil || got.Phase != edge.Attaching || got.Pending != nil || f.writes != 0 {
+		t.Fatal("CLI did not persist a read-only-cloud completion")
 	}
 }

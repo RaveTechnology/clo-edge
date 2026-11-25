@@ -78,6 +78,33 @@ a lost POST response is not evidence that no delayed mutation can still occur.
 Accepted commands can be polled after a process restart; dispatched commands
 without durable acceptance never replay or issue the next mutation.
 
+### Finish a durably accepted attach
+
+`complete-accepted-attach` is an offline, read-only-cloud recovery command for one
+narrow case: the journal still contains an acknowledged attach, the exact target
+now owns the ACTIVE/FIXED address, the original source is terminal STOPPED/OFF,
+and the target/controller are running. Fresh public TLS and target health must
+pass; the old source health endpoint must be unreachable as well. Host/config/workflow bindings and the exclusive local state lock still
+apply. It refuses missing acceptance, stop/detach recovery, wrong ownership,
+stale probes and an unfenced source. A matching GET after a lost POST response
+remains insufficient; this command cannot resolve an unacknowledged dispatch.
+
+Preserve the original journal/config and settle operator interference first.
+Stop `clo-edge.service`, run `clo-edge complete-accepted-attach --dry-run` with
+the usual private config/token paths, and retain its before/after receipt. The
+dry run makes no journal or native changes. Run the same command without
+`--dry-run` to persist only Completed/disarmed; retain that receipt, then restart
+the daemon. It never repeats an attach or issues a stop/detach. The source must
+already have been fenced explicitly, and a later arm still requires both edges
+healthy and the full cooldown. Do not initialize or edit the journal manually.
+
+### Verification timeout without an accepted pending request
+
+This recovery is intentionally unsupported. Old phase-only journal exports cannot
+prove a specific workflow or its convergence deadline. A private JSON file is not
+accepted as authorization. Preserve the state and native outcome; do not reset,
+initialize or force-arm. A future operator requires trusted workflow-bound history.
+
 If the fixed controller host is lost, fence it and its credentials before moving
 state anywhere. Resolve pending provider jobs first. Host/config binding rejects
 copied or rebound journals. No force-reset/lease-timeout takeover is provided.
@@ -108,3 +135,20 @@ TLS and samples `/healthz` five times, expecting the fixture body `ok` plus newl
 Its artifact contains only timestamps/results/error classes, without host/IP/CA.
 Remove the temporary secret after the job. This manual preflight does not replace
 continuous external blackbox monitoring of a deployed service.
+# Terminal accepted detach recovery
+
+`resume-accepted-detach --dry-run` evaluates a narrow offline transition from a
+disarmed RecoveryRequired journal with a durably acknowledged pending detach.
+It requires the unchanged host/config/workflow binding, terminal STOPPED/OFF
+source, unreachable source health, healthy ACTIVE/ON target and controller, and
+the exact configured FREE/DOWN unattached IPv4 with its configured bandwidth.
+An unknown acknowledgement, other pending kind or unexpected owner is rejected.
+
+After archiving the original journal and stopping the daemon, run the dry command
+using the same private credential, service identity and writable state directory
+as other offline commands below. Confirm byte-identical journal and the proposed
+Attaching state, then run without `--dry-run`. The command submits no cloud writes;
+it clears only the proven completed detach and resumes this specific transfer.
+Restart the daemon: its normal durable dispatch owns the next attach intent. This
+does not arm Watching, reset the journal or accept an earlier HA drill as passing.
+Never run init or manually edit the state to resume recovery.

@@ -4,11 +4,14 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"io"
 	"net"
 	"net/http"
 	"os"
 	"sync"
+	"sync/atomic"
+	"syscall"
 	"time"
 )
 
@@ -33,7 +36,24 @@ func (p *Prober) request(ctx context.Context, u string, tr *http.Transport, iden
 	return identity == "" || string(b) == identity+"\n"
 }
 func (p *Prober) private(ctx context.Context, u, id string) bool {
-	return p.request(ctx, u, &http.Transport{DisableKeepAlives: true}, id)
+	ok, _ := p.privateEvidence(ctx, u, id)
+	return ok
+}
+func (p *Prober) privateEvidence(ctx context.Context, u, id string) (bool, bool) {
+	var connected, negative atomic.Bool
+	tr := &http.Transport{DisableKeepAlives: true, DialContext: func(ctx context.Context, network, address string) (net.Conn, error) {
+		c, err := (&net.Dialer{Timeout: p.Timeout}).DialContext(ctx, network, address)
+		if c != nil {
+			connected.Store(true)
+		}
+		var op *net.OpError
+		if c == nil && errors.As(err, &op) && op.Op == "dial" && (op.Timeout() || errors.Is(err, syscall.ECONNREFUSED) || errors.Is(err, syscall.EHOSTUNREACH) || errors.Is(err, syscall.ENETUNREACH)) {
+			negative.Store(true)
+		}
+		return c, err
+	}}
+	ok := p.request(ctx, u, tr, id)
+	return ok, !connected.Load() && negative.Load()
 }
 func (p *Prober) public(ctx context.Context, c Config, dial string) bool {
 	var roots *x509.CertPool
@@ -55,6 +75,7 @@ func (p *Prober) public(ctx context.Context, c Config, dial string) bool {
 func (p *Prober) Observe(ctx context.Context, c Config) Observation {
 	var out Observation
 	out.Private = map[string]bool{}
+	out.PrivateUnreachable = map[string]bool{}
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	wg.Go(func() {
@@ -65,9 +86,10 @@ func (p *Prober) Observe(ctx context.Context, c Config) Observation {
 	})
 	for _, edge := range c.Edges {
 		wg.Go(func() {
-			v := p.private(ctx, "http://"+net.JoinHostPort(edge.PrivateIP, "8405")+"/healthz", edge.ID)
+			v, negative := p.privateEvidence(ctx, "http://"+net.JoinHostPort(edge.PrivateIP, "8405")+"/healthz", edge.ID)
 			mu.Lock()
 			out.Private[edge.ID] = v
+			out.PrivateUnreachable[edge.ID] = negative
 			mu.Unlock()
 		})
 	}

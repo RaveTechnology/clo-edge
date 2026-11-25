@@ -1,3 +1,21 @@
+# v0.2.0-rc.2 — fenced transfer recovery and public interface helper
+
+Adds narrow offline recovery for durably acknowledged attach/detach operations.
+Fresh native fencing, ownership and health checks remain mandatory. A responding
+old health endpoint cannot be treated as unreachable, even if its HTTP health
+check fails. Unknown acknowledgements and phase-only history remain blocked.
+
+The optional Python network companion configures only the provider-selected
+public NIC, with restricted SSH, source-policy routing and whole-main-table
+preservation. It never powers VMs or moves IPs. Native files and units are now
+included in the release archive; the scratch image still runs the Go controller.
+
+Two controlled transfers completed without operator recovery. An independent
+synthetic HTTPS observer measured stable recovery about 123 and 121 seconds after
+the respective faults. These are two samples, not an SLA. The controller host
+remains fixed; automatic failback/re-arming and recovery from lost acknowledgements
+are not provided. Repair the standby and explicitly arm after the cooldown.
+
 # v0.2.0-rc.1 — automatic ingress worker reconciliation
 
 Adds the native clo-ingress companion for Rancher RKE2 private workers: identity-bound firewall preparation, guarded ingress-ready labels, live HAProxy generation verification and current backend discovery for external health checks. Runs on an existing fixed management host; no permanent VM or cloud-write capability is added. Default mode is observe-only.

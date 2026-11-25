@@ -1,0 +1,17 @@
+[Unit]
+Description=Configure the fenced CLO edge public interface
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+UMask=0077
+ExecStart=/usr/bin/python3 /usr/local/lib/clo-edge-network/controller.py /etc/clo-edge-network/controller.json
+TimeoutStartSec=45
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/clo-edge-network
+

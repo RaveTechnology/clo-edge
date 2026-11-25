@@ -29,13 +29,13 @@ func (v View) Validate(c Config) error {
 	}
 	a := v.Address
 	if a.ID != c.AddressID || a.IP != c.PublicIP || !a.External || a.Version != 4 || a.Bandwidth != c.BandwidthMbps {
-		return fmt.Errorf("%w: configured IPv4 identity or bandwidth changed", ErrUnsafeCloudState)
+		return fmt.Errorf("%w: configured IPv4 identity or bandwidth changed (id_match=%t ip_match=%t external=%t version=%d bandwidth=%d)", ErrUnsafeCloudState, a.ID == c.AddressID, a.IP == c.PublicIP, a.External, a.Version, a.Bandwidth)
 	}
 	if a.Type == "FREE" && a.Owner == "" && a.Entity == "" && a.Status == "DOWN" {
 		return nil
 	}
 	if a.Type != "FIXED" || a.Entity != "server" || (a.Owner != c.Edges[0].ID && a.Owner != c.Edges[1].ID) {
-		return fmt.Errorf("%w: foreign or unknown address attachment", ErrUnsafeCloudState)
+		return fmt.Errorf("%w: foreign or unknown address attachment (type=%q status=%q entity=%q known_owner=%t)", ErrUnsafeCloudState, a.Type, a.Status, a.Entity, a.Owner == c.Edges[0].ID || a.Owner == c.Edges[1].ID)
 	}
 	return nil
 }
@@ -63,4 +63,6 @@ type Observation struct {
 	At      time.Time
 	Public  bool
 	Private map[string]bool
+	// True only for a classified TCP dial failure, never an unhealthy HTTP reply.
+	PrivateUnreachable map[string]bool
 }

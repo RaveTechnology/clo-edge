@@ -85,3 +85,12 @@ Node identities or addresses change. It runs on the existing management host and
 never provisions or powers cloud resources. See [installation and recovery](docs/ingress-operations.md).
 The scratch `clo-edge` image remains the VIP controller; the SSH/kubectl companion
 is distributed in the native binary archive.
+
+## Public interface after a fenced transfer
+
+The optional [guest network companion](network/README.md) prepares the public NIC
+selected by the provider's current MAC after a fenced VIP transfer. It reads the
+cloud API and uses a restricted SSH helper; cloud commands remain owned by the
+VIP controller. Its Python files and service units are included in the binary
+archive. Offline operators can settle a durably accepted attach or detach only
+after fresh terminal checks; unknown acknowledgements remain blocked.

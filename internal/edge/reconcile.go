@@ -159,7 +159,7 @@ func (e *Engine) Tick(ctx context.Context, now time.Time, o Observation) error {
 	now = now.Add(time.Since(start))
 	if err != nil {
 		if errors.Is(err, ErrUnsafeCloudState) {
-			return e.recover(s, "confirmed cloud resource identity or ownership violation")
+			return e.recover(s, "confirmed cloud resource identity or ownership violation: "+err.Error())
 		}
 		s.SuspectSince = time.Time{}
 		s.LastObservation = time.Time{}

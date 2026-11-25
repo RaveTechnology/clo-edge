@@ -1,0 +1,37 @@
+{
+  "profile": "two controlled native transfers; not an SLA",
+  "dates": [
+    "2026-11-24",
+    "2026-11-25"
+  ],
+  "fault": "stop only the active dedicated HAProxy service",
+  "operatorVMStopForFault": false,
+  "operatorIPMutationForFault": false,
+  "sourceFence": "normal controller STOPPED/OFF before detach",
+  "publicNIC": "provider-selected MAC, private management preserved",
+  "results": [
+    {
+      "direction": "a-to-b",
+      "candidate": "before final review fixes",
+      "faultToStableHTTPSSeconds": 123.245,
+      "observedSuccessGapSeconds": 123.592,
+      "normalCompletedObserved": true,
+      "recoveryObserved": false
+    },
+    {
+      "direction": "b-to-a",
+      "candidate": "after review fixes",
+      "faultToStableHTTPSSeconds": 120.921,
+      "observedSuccessGapSeconds": 121.633,
+      "normalCompletedObserved": true,
+      "recoveryObserved": false
+    }
+  ],
+  "limitations": [
+    "two samples only",
+    "earlier failed drills are not successes",
+    "fixed controller host is not HA",
+    "explicit standby repair/cooldown/arming",
+    "existing TCP/WebSocket sessions reconnect"
+  ]
+}
