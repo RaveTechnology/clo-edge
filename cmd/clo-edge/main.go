@@ -53,7 +53,7 @@ func tokenFile(path string) (string, error) {
 }
 func execute(ctx context.Context, args []string, out io.Writer, newCloud factory, probe probes) error {
 	if len(args) == 0 {
-		return errors.New("command required: init, arm, run, inspect, render-haproxy, version")
+		return errors.New("command required: init, arm, complete-accepted-attach, resume-accepted-detach, run, inspect, render-haproxy, version")
 	}
 	cmd := args[0]
 	if cmd == "version" {
@@ -66,14 +66,18 @@ func execute(ctx context.Context, args []string, out io.Writer, newCloud factory
 	stateDir := fs.String("state-dir", "/var/lib/clo-edge", "private local state directory")
 	secret := fs.String("token-file", "/etc/clo-edge/api-token", "private token file")
 	listen := fs.String("listen", "127.0.0.1:9128", "loopback status/metrics")
+	dryRun := fs.Bool("dry-run", false, "evaluate accepted-attach recovery without changing the journal")
 	edgeID := fs.String("edge-id", "", "configured edge ID for render-haproxy")
 	if e := fs.Parse(args[1:]); e != nil || fs.NArg() != 0 {
 		return errors.New("invalid command arguments")
 	}
 	switch cmd {
-	case "init", "arm", "run", "inspect", "render-haproxy":
+	case "init", "arm", "complete-accepted-attach", "resume-accepted-detach", "run", "inspect", "render-haproxy":
 	default:
 		return errors.New("unknown command")
+	}
+	if *dryRun && cmd != "complete-accepted-attach" && cmd != "resume-accepted-detach" {
+		return errors.New("dry-run is supported only for complete-accepted-attach")
 	}
 	if cmd == "inspect" {
 		st, e := edge.Inspect(*stateDir)
@@ -146,6 +150,27 @@ func execute(ctx context.Context, args []string, out io.Writer, newCloud factory
 		}
 		_, e = fmt.Fprintln(out, `{"phase":"Watching","armed":true}`)
 		return e
+	}
+	if cmd == "complete-accepted-attach" || cmd == "resume-accepted-detach" {
+		before, err := store.Load()
+		if err != nil {
+			return err
+		}
+		o := probe.Observe(bounded, cfg)
+		var after edge.State
+		if cmd == "complete-accepted-attach" {
+			after, err = eng.CompleteAcceptedAttach(bounded, time.Now(), o, *dryRun)
+		} else {
+			after, err = eng.ResumeAcceptedDetach(bounded, time.Now(), o, *dryRun)
+		}
+		if err != nil {
+			return err
+		}
+		return json.NewEncoder(out).Encode(struct {
+			Before edge.State `json:"before"`
+			After  edge.State `json:"after"`
+			DryRun bool       `json:"dry_run"`
+		}{before, after, *dryRun})
 	}
 	listener, e := net.Listen("tcp", *listen)
 	if e != nil {

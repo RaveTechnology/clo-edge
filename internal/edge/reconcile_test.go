@@ -74,7 +74,7 @@ func fixture(t *testing.T) (*Engine, *fakeCloud, time.Time) {
 		f.view.Servers[id] = Server{ID: id, ProjectID: c.ProjectID, Status: "ACTIVE", SwitchStatus: "ON"}
 	}
 	eng := &Engine{Config: c, Store: s, Cloud: f}
-	now := time.Unix(1000, 0)
+	now := time.Unix(1000, 0).UTC()
 	if e = eng.Initialize(context.Background(), "host"); e != nil {
 		t.Fatal(e)
 	}
@@ -84,7 +84,7 @@ func fixture(t *testing.T) (*Engine, *fakeCloud, time.Time) {
 	return eng, f, now
 }
 func obs(c Config, at time.Time, p, a, b bool) Observation {
-	return Observation{At: at, Public: p, Private: map[string]bool{c.Edges[0].ID: a, c.Edges[1].ID: b}}
+	return Observation{At: at, Public: p, Private: map[string]bool{c.Edges[0].ID: a, c.Edges[1].ID: b}, PrivateUnreachable: map[string]bool{c.Edges[0].ID: !a, c.Edges[1].ID: !b}}
 }
 func tick(t *testing.T, e *Engine, at time.Time, o Observation) State {
 	t.Helper()
