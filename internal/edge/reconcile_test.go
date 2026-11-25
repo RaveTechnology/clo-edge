@@ -74,7 +74,7 @@ func fixture(t *testing.T) (*Engine, *fakeCloud, time.Time) {
 		f.view.Servers[id] = Server{ID: id, ProjectID: c.ProjectID, Status: "ACTIVE", SwitchStatus: "ON"}
 	}
 	eng := &Engine{Config: c, Store: s, Cloud: f}
-	now := time.Unix(1000, 0)
+	now := time.Unix(1000, 0).UTC()
 	if e = eng.Initialize(context.Background(), "host"); e != nil {
 		t.Fatal(e)
 	}
